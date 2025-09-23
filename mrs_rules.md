@@ -1,9 +1,9 @@
 # MRS Ruleset Links (Always Latest)
 
-Generated at: 2025-09-23 06:49:56+00:00
+Generated at: 2025-09-23 07:46:28+00:00
 
 ```yaml
-- RULE-SET,Pinterest_domain,🌍 国外媒体
+- RULE-SET,Pinterest_domain,🚀 国外流量
 - RULE-SET,GitHub_domain,👨‍💻 GitHub
 - RULE-SET,Inside_domain,🎯 国内流量
 - RULE-SET,Inside_ipcidr,🎯 国内流量
