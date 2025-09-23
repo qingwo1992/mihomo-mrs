@@ -242,7 +242,8 @@ jobs:
           if [ -s "rule_sources.txt" ]; then
               echo "Custom 'rule_sources.txt' found, processing it."
               while IFS= read -r url; do
-                  url=$(echo "$url" | xargs)
+                  # 【已修复】增加对回车符 \r 的清理
+                  url=$(echo "$url" | tr -d '\r' | xargs)
                   if [ -n "$url" ]; then
                       local name=$(basename "$url" | sed 's/\.[^.]*$//')
                       process_rule "$name" "$url"
@@ -259,8 +260,8 @@ jobs:
 
               # 【已修复】使用进程替换 <(...) 来避免子shell问题，确保计数器在主脚本中被修改
               while IFS= read -r line; do
-                  echo "[DEBUG] Reading line from ini: $line"
-                  line_content=$(echo "$line" | sed -e 's/^\s*ruleset=//' -e 's/clash-classic://')
+                  # 【已修复】在这里也增加对回车符 \r 的清理
+                  line_content=$(echo "$line" | tr -d '\r' | sed -e 's/^\s*ruleset=//' -e 's/clash-classic://')
                   url=$(echo "$line_content" | sed -e 's/.*,//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
                   original_name=$(echo "$line_content" | sed -e 's/,.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
 
