@@ -28,11 +28,17 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # 3. 下载并设置 Mihomo
+      # 3. 下载并设置 Mihomo (已修复)
       - name: Setup Mihomo
         run: |
-          # 从 GitHub API 获取最新的 Mihomo release URL
-          MIHOMO_LATEST_URL=$(curl -s "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" | jq -r '.assets[] | select(.name | contains("linux-amd64") and endswith(".gz")) | .browser_download_url')
+          # 从 GitHub API 获取最新的 Mihomo release URL，并筛选出唯一的 compatible 版本
+          MIHOMO_LATEST_URL=$(curl -s "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" | jq -r '.assets[] | select(.name | contains("linux-amd64-compatible") and endswith(".gz")) | .browser_download_url' | head -n 1)
+          
+          if [ -z "$MIHOMO_LATEST_URL" ]; then
+            echo "::error::无法找到 Mihomo 的 compatible 版本下载链接。"
+            exit 1
+          fi
+
           echo "Downloading Mihomo from $MIHOMO_LATEST_URL"
           # 下载、解压、赋予执行权限并移动到系统路径
           wget -qO mihomo.gz "$MIHOMO_LATEST_URL"
@@ -43,7 +49,7 @@ jobs:
           echo "Mihomo version:"
           mihomo -v
 
-      # 4. 运行转换脚本 (已更新)
+      # 4. 运行转换脚本
       - name: Run Conversion Script
         id: conversion
         run: |
@@ -212,7 +218,6 @@ jobs:
             echo "没有文件变动，无需提交。"
           else
             # 使用上一步的输出作为 commit message 的一部分
-            COMMIT_MSG="feat(rules): 自动更新规则版本到 ${NEW_DIR}"
             git commit -m "feat(rules): Auto update MRS rulesets to version ${{ steps.conversion.outputs.run_dir }}"
             git push
           fi
