@@ -7,7 +7,7 @@ on:
 
   # 定时任务：每周日北京时间早上6点运行 (UTC 时间 周六 22:00)
   schedule:
-    - cron: '0 22 * * 5'
+    - cron: '0 22 * * 6'
   
   # 当 rule_sources.txt 文件被推送到 main 分支时触发
   push:
@@ -103,7 +103,7 @@ jobs:
               # 清理 URL，移除末尾的回车符和多余空格
               url=$(echo "$url" | tr -d '\r' | xargs)
 
-              # 新增：验证 URL 是否以 http/https 开头，跳过 GEOIP, FINAL 等特殊规则
+              # 验证 URL 是否以 http/https 开头，跳过 GEOIP, FINAL 等特殊规则
               if [[ ! "$url" =~ ^https?:// ]]; then
                   echo "Skipping non-URL rule: Name='${name}', Content='${url}'"
                   return
@@ -113,11 +113,22 @@ jobs:
 
               echo "---"
               echo "Processing: Name='${name}', URL='${url}'"
+              
+              # 新增：增加详细的调试日志，用于追踪文件名生成过程
+              echo "  Debug Info:"
+              echo "    - Original Name Arg: '${name}'"
+              echo "    - Original URL Arg: '${url}'"
+              local url_basename=$(basename "$url")
+              echo "    - Basename from URL: '${url_basename}'"
+              local name_no_ext=$(echo "$url_basename" | sed 's/\.[^.]*$//')
+              echo "    - Basename w/o extension: '${name_no_ext}'"
+              local sanitized_name=$(echo "$name_no_ext" | sed 's/[^a-zA-Z0-9_.-]//g')
+              echo "    - Final Sanitized Filename: '${sanitized_name}'"
 
-              # 规范化文件名，移除可能导致问题的特殊字符和 emoji
-              local sanitized_name=$(echo "$name" | sed 's/[^a-zA-Z0-9_.-]//g' | sed 's/ emojis /_/g')
+              # 如果处理后文件名为空（例如 URL 以 / 结尾），则给一个默认名
               if [[ -z "$sanitized_name" ]]; then
-                  sanitized_name=$(basename "$url" | sed 's/\.[^.]*$//' | sed 's/[^a-zA-Z0-9_.-]//g')
+                  sanitized_name="rule_$(date +%s%N)"
+                  echo "    - Warning: Sanitized name was empty, assigned default: '${sanitized_name}'"
               fi
 
               local extension="${url##*.}"
@@ -171,6 +182,7 @@ jobs:
                   mv "$temp_input_file" "$final_source_file"
 
                   # A. 将规则追加到本次运行的 provider_config.yaml 中
+                  # provider 的 key 使用处理后的文件名，确保唯一性
                   echo "  # 原始名称: ${name}" >> "$CONFIG_FILE"
                   echo "  ${sanitized_name}:" >> "$CONFIG_FILE"
                   echo "    type: http" >> "$CONFIG_FILE"
@@ -181,6 +193,7 @@ jobs:
                   echo "" >> "$CONFIG_FILE"
 
                   # B. 将规则追加到根目录的汇总文件 mrs_rules.md 中
+                  # RULE-SET 仍然使用原始的 emoji+名称
                   echo "- RULE-SET,${name},${github_raw_url_base}/${output_file}" >> "$SUMMARY_FILE"
               else
                   echo "::error::转换 ${temp_input_file} 失败。"
@@ -193,6 +206,7 @@ jobs:
               echo "检测到 rule_sources.txt，开始处理自定义链接。"
               while IFS= read -r url || [[ -n "$url" ]]; do
                   if [[ -z "$url" || "$url" =~ ^# ]]; then continue; fi
+                  # 从自定义文件中，也使用源文件名作为规则名
                   name=$(basename "$url" | sed 's/\.[^.]*$//')
                   process_rule "$name" "$url"
               done < "rule_sources.txt"
