@@ -345,8 +345,9 @@ jobs:
           echo "Copying latest provider_config.yaml to root directory..."
           cp -f "$LATEST_DIR/provider_config.yaml" ./provider_config.yaml
 
-          # 设置 git commit 的 message
+          # 【已更新】将版本标签导出到 GITHUB_ENV 供下一步使用
           echo "COMMIT_MSG=feat(rules): Auto update MRS rulesets to version $VERSION_TAG" >> $GITHUB_ENV
+          echo "VERSION_TAG=${VERSION_TAG}" >> $GITHUB_ENV
           git tag "$VERSION_TAG"
 
           # --- 打印运行摘要 ---
@@ -363,9 +364,13 @@ jobs:
           
           git add latest/ versioned_rules/ mrs_rules.md provider_config.yaml
           
+          # 【已更新】总是推送标签，以确保即使没有文件更改，运行计数也能正确增加
+          echo "Pushing tag ${{ env.VERSION_TAG }} to ensure run count is updated..."
+          git push origin "refs/tags/${{ env.VERSION_TAG }}"
+          
           if git diff --staged --quiet; then
-            echo "No changes to commit."
+            echo "No file changes to commit."
           else
             git commit -m "${{ env.COMMIT_MSG }}"
-            git push --follow-tags
+            git push
           fi
