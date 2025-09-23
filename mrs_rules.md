@@ -1,0 +1,42 @@
+# MRS 规则集列表 (最新)
+自动更新于: 2025-09-23 02:10:56 UTC
+当前版本位于: `[versioned_rules/2025-09-23](./versioned_rules/2025-09-23)`
+
+- RULE-SET,👨‍💻 GitHub,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/GitHub.mrs
+- RULE-SET,🎯 国内流量,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/SteamCN.mrs
+- RULE-SET,🧚 AI,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs
+- RULE-SET,🧚 AI,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs
+- RULE-SET,🧚 AI,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs
+- RULE-SET,🧚 AI,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs
+- RULE-SET,🧚 AI,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs
+- RULE-SET,🧚 AI,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs
+- RULE-SET,🎯 国内流量,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Lan.mrs
+- RULE-SET,🎯 国内流量,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/UnBan.mrs
+- RULE-SET,🚀 国外流量,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/PikPak.mrs
+- RULE-SET,🛸 IP归属地伪装,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/IP.mrs
+- RULE-SET,🛑 广告拦截,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/BanAD.mrs
+- RULE-SET,🛑 广告拦截,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/ZhihuAds.mrs
+- RULE-SET,📹 YouTube,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/YouTube.mrs
+- RULE-SET,🎥 Netflix,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Netflix.mrs
+- RULE-SET,🐹 DisneyPlus,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/DisneyPlus.mrs
+- RULE-SET,📽️ PrimeVideo,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/PrimeVideo.mrs
+- RULE-SET,🎦 HBO,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/HBO.mrs
+- RULE-SET,🎦 HBO,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/HBO.mrs
+- RULE-SET,🎦 HBO,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/HBO.mrs
+- RULE-SET,🍎 AppleTV,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AppleTV.mrs
+- RULE-SET,🎬 EMBY,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/EMBY.mrs
+- RULE-SET,🎬 EMBY,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/EMBY.mrs
+- RULE-SET,📺 巴哈姆特,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Bahamut.mrs
+- RULE-SET,📺 Bilibili,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Bilibili.mrs
+- RULE-SET,🎵 Spotify,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Spotify.mrs
+- RULE-SET,🎶 TikTok,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/TikTok.mrs
+- RULE-SET,🌍 国外媒体,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/GlobalMedia_Classical.mrs
+- RULE-SET,🌏 国内媒体,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/ChinaMedia.mrs
+- RULE-SET,🎯 国内流量,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/GoogleCN.mrs
+- RULE-SET,Ⓜ️ 微软云盘,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/OneDrive.mrs
+- RULE-SET,Ⓜ️ 微软服务,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Microsoft.mrs
+- RULE-SET,🍎 苹果服务,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Apple.mrs
+- RULE-SET,📲 Telegram,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Telegram.mrs
+- RULE-SET,🤖 Discord,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Discord.mrs
+- RULE-SET,🎮 游戏平台,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Game.mrs
+- RULE-SET,🎯 国内流量,https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Download.mrs
