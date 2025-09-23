@@ -52,7 +52,7 @@ jobs:
           echo "Mihomo version:"
           mihomo -v
 
-      # 4. 运行转换脚本 (已修复)
+      # 4. 运行转换脚本 (最终修复版)
       - name: Run Conversion Script
         id: conversion
         run: |
@@ -82,62 +82,80 @@ jobs:
           # 创建所需目录
           mkdir -p "$DOWNLOAD_DIR" "$RULES_SUBDIR"
 
-          # 初始化本次运行的 provider 配置文件
+          # 初始化配置文件和汇总文件
           echo "# Rule Providers for this version (${RUN_OUTPUT_DIR})" > "$CONFIG_FILE"
           echo "# Generated at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> "$CONFIG_FILE"
           echo "rule-providers:" >> "$CONFIG_FILE"
 
-          # 初始化根目录的汇总文件
           rm -f "$SUMMARY_FILE"
           echo "# MRS 规则集列表 (最新)" > "$SUMMARY_FILE"
           echo "自动更新于: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> "$SUMMARY_FILE"
           echo "当前版本位于: \`[${RUN_OUTPUT_DIR}](./${RUN_OUTPUT_DIR})\`" >> "$SUMMARY_FILE"
           echo "" >> "$SUMMARY_FILE"
 
-
           # --- 2. 定义核心处理函数 ---
+
+          # 全局变量，用于获取 GitHub Raw URL
+          GITHUB_RAW_URL_BASE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}"
+
+          # 新增：转换和提交单个纯净规则文件的函数
+          convert_and_commit_rule() {
+              local display_name="$1"
+              local source_file="$2"
+              local rule_type="$3" # "domain" or "ipcidr"
+              local original_sanitized_name="$4"
+
+              # 为拆分后的文件创建唯一的文件名和 provider key
+              local final_sanitized_name="${original_sanitized_name}_${rule_type}"
+              local output_file_path="${RULES_SUBDIR}/${final_sanitized_name}.mrs"
+              
+              echo "  -> Converting ${source_file} as ${rule_type} to ${output_file_path}"
+              
+              if mihomo convert-ruleset "$rule_type" text "$source_file" "$output_file_path"; then
+                  echo "     Success: 成功转换"
+                  # 将拆分后的源文件也归档
+                  mv "$source_file" "${RULES_SUBDIR}/${final_sanitized_name}.txt"
+
+                  # A. 追加到 provider_config.yaml
+                  echo "  # 原始名称: ${display_name}" >> "$CONFIG_FILE"
+                  echo "  ${final_sanitized_name}:" >> "$CONFIG_FILE"
+                  echo "    type: http" >> "$CONFIG_FILE"
+                  echo "    behavior: ${rule_type}" >> "$CONFIG_FILE"
+                  echo "    url: \"${GITHUB_RAW_URL_BASE}/${output_file_path}\"" >> "$CONFIG_FILE"
+                  echo "    path: \"./rules/${final_sanitized_name}.mrs\"" >> "$CONFIG_FILE"
+                  echo "    interval: 86400" >> "$CONFIG_FILE"
+                  echo "" >> "$CONFIG_FILE"
+
+                  # B. 追加到 mrs_rules.md
+                  echo "- RULE-SET,${display_name},${GITHUB_RAW_URL_BASE}/${output_file_path}" >> "$SUMMARY_FILE"
+              else
+                  echo "::error::转换 ${source_file} 失败。"
+              fi
+          }
+
           process_rule() {
               local name="$1"
               local url="$2"
               
-              # 清理 URL，移除末尾的回车符和多余空格
               url=$(echo "$url" | tr -d '\r' | xargs)
-
-              # 验证 URL 是否以 http/https 开头，跳过 GEOIP, FINAL 等特殊规则
               if [[ ! "$url" =~ ^https?:// ]]; then
                   echo "Skipping non-URL rule: Name='${name}', Content='${url}'"
                   return
               fi
 
-              local github_raw_url_base="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}"
-
               echo "---"
               echo "Processing: Name='${name}', URL='${url}'"
               
-              # 新增：增加详细的调试日志，用于追踪文件名生成过程
-              echo "  Debug Info:"
-              echo "    - Original Name Arg: '${name}'"
-              echo "    - Original URL Arg: '${url}'"
-              local url_basename=$(basename "$url")
-              echo "    - Basename from URL: '${url_basename}'"
-              local name_no_ext=$(echo "$url_basename" | sed 's/\.[^.]*$//')
-              echo "    - Basename w/o extension: '${name_no_ext}'"
-              local sanitized_name=$(echo "$name_no_ext" | sed 's/[^a-zA-Z0-9_.-]//g')
-              echo "    - Final Sanitized Filename: '${sanitized_name}'"
-
-              # 如果处理后文件名为空（例如 URL 以 / 结尾），则给一个默认名
-              if [[ -z "$sanitized_name" ]]; then
-                  sanitized_name="rule_$(date +%s%N)"
-                  echo "    - Warning: Sanitized name was empty, assigned default: '${sanitized_name}'"
-              fi
+              local sanitized_name
+              sanitized_name=$(basename "$url" | sed 's/\.[^.]*$//' | sed 's/[^a-zA-Z0-9_.-]//g')
+              if [[ -z "$sanitized_name" ]]; then sanitized_name="rule_$(date +%s%N)"; fi
 
               local extension="${url##*.}"
               local temp_input_file="${DOWNLOAD_DIR}/${sanitized_name}.${extension}"
               
-              # 下载规则文件，带3次重试
               echo "Downloading to ${temp_input_file}..."
               if ! curl -L --retry 3 --retry-delay 5 --silent --show-error -o "$temp_input_file" "$url"; then
-                  echo "::warning::下载 ${url} 失败 (已重试3次)，跳过。"
+                  echo "::warning::下载 ${url} 失败，跳过。"
                   return
               fi
               
@@ -147,57 +165,67 @@ jobs:
                   return
               fi
 
-              # 判断规则类型 (domain/ipcidr) 和格式 (yaml/text)
-              local rule_type=""
-              local rule_format=""
-              case "$extension" in
-                  yaml|yml)
-                      rule_type="domain"
-                      rule_format="yaml"
-                      ;;
-                  txt|list)
-                      if grep -qE '([0-9]{1,3}\.){3}[0-9]{1,3}' "$temp_input_file"; then
-                          rule_type="ipcidr"
+              # --- 核心修改：文件预处理和拆分 ---
+              if [[ "$extension" == "txt" || "$extension" == "list" ]]; then
+                  echo "  File is a .txt/.list, attempting to split into domain/ipcidr/other..."
+                  local domain_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.domains.txt"
+                  local ipcidr_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.ips.txt"
+                  local other_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.other.list"
+
+                  # 拆分逻辑
+                  while IFS= read -r original_line || [[ -n "$original_line" ]]; do
+                      line=$(echo "$original_line" | sed 's/#.*//' | xargs) # 移除注释和多余空格用于匹配
+                      if [ -z "$line" ]; then continue; fi
+                      
+                      if [[ "$line" == DOMAIN,* || "$line" == DOMAIN-SUFFIX,* || "$line" == DOMAIN-KEYWORD,* ]]; then
+                          echo "$line" | cut -d',' -f2- >> "$domain_temp_file"
+                      elif [[ "$line" == IP-CIDR,* ]]; then
+                          echo "$line" | cut -d',' -f2 >> "$ipcidr_temp_file"
                       else
-                          rule_type="domain"
+                          # 这是一个不支持 MRS 转换的规则，保存原始行
+                          echo "$original_line" >> "$other_temp_file"
                       fi
-                      rule_format="text"
-                      ;;
-                  *)
-                      echo "::warning::不支持的文件扩展名 '${extension}' 来自 ${url}，跳过。"
-                      rm "$temp_input_file"
-                      return
-                      ;;
-              esac
-              
-              echo "Converting: Type=${rule_type}, Format=${rule_format}"
+                  done < "$temp_input_file"
 
-              local final_source_file="${RULES_SUBDIR}/${sanitized_name}.${extension}"
-              local output_file="${RULES_SUBDIR}/${sanitized_name}.mrs"
-              
-              # 使用 mihomo 进行转换
-              if mihomo convert-ruleset "$rule_type" "$rule_format" "$temp_input_file" "$output_file"; then
-                  echo "成功转换为 ${output_file}"
-                  # 将源文件移动到本次运行的 'rules' 目录中进行归档
-                  mv "$temp_input_file" "$final_source_file"
+                  # 如果拆分出了域名文件，则处理它
+                  if [ -s "$domain_temp_file" ]; then
+                      convert_and_commit_rule "${name} (Domain)" "$domain_temp_file" "domain" "$sanitized_name"
+                  fi
+                  # 如果拆分出了IP文件，则处理它
+                  if [ -s "$ipcidr_temp_file" ]; then
+                      convert_and_commit_rule "${name} (IP)" "$ipcidr_temp_file" "ipcidr" "$sanitized_name"
+                  fi
+                  # 如果拆分出了其他类型的文件，则处理它
+                  if [ -s "$other_temp_file" ]; then
+                      local final_other_filename="${sanitized_name}_other.list"
+                      local final_other_filepath="${RULES_SUBDIR}/${final_other_filename}"
+                      echo "  -> Archiving unsupported rules to ${final_other_filepath}"
+                      mv "$other_temp_file" "$final_other_filepath"
 
-                  # A. 将规则追加到本次运行的 provider_config.yaml 中
-                  # provider 的 key 使用处理后的文件名，确保唯一性
-                  echo "  # 原始名称: ${name}" >> "$CONFIG_FILE"
-                  echo "  ${sanitized_name}:" >> "$CONFIG_FILE"
-                  echo "    type: http" >> "$CONFIG_FILE"
-                  echo "    behavior: ${rule_type}" >> "$CONFIG_FILE"
-                  echo "    url: \"${github_raw_url_base}/${output_file}\"" >> "$CONFIG_FILE"
-                  echo "    path: \"./rules/${sanitized_name}.mrs\"" >> "$CONFIG_FILE"
-                  echo "    interval: 86400" >> "$CONFIG_FILE"
-                  echo "" >> "$CONFIG_FILE"
+                      # 在 provider_config.yaml 中为其创建条目
+                      echo "  # 原始名称: ${name} (Unsupported)" >> "$CONFIG_FILE"
+                      echo "  ${sanitized_name}_other:" >> "$CONFIG_FILE"
+                      echo "    type: http" >> "$CONFIG_FILE"
+                      echo "    behavior: classical" >> "$CONFIG_FILE"
+                      echo "    url: \"${GITHUB_RAW_URL_BASE}/${final_other_filepath}\"" >> "$CONFIG_FILE"
+                      echo "    path: \"./rules/${final_other_filename}\"" >> "$CONFIG_FILE"
+                      echo "    interval: 86400" >> "$CONFIG_FILE"
+                      echo "" >> "$CONFIG_FILE"
 
-                  # B. 将规则追加到根目录的汇总文件 mrs_rules.md 中
-                  # RULE-SET 仍然使用原始的 emoji+名称
-                  echo "- RULE-SET,${name},${github_raw_url_base}/${output_file}" >> "$SUMMARY_FILE"
+                      # 在 mrs_rules.md 中也添加引用
+                      echo "- RULE-SET,${name} (Unsupported),${GITHUB_RAW_URL_BASE}/${final_other_filepath}" >> "$SUMMARY_FILE"
+                  fi
+
+                  rm "$temp_input_file"
+
+              elif [[ "$extension" == "yaml" || "$extension" == "yml" ]]; then
+                  # YAML 文件默认为纯 domain 类型，直接转换
+                  echo "  File is a .yaml, converting as pure domain..."
+                  mv "$temp_input_file" "${DOWNLOAD_DIR}/${sanitized_name}.domains.txt"
+                  convert_and_commit_rule "$name" "${DOWNLOAD_DIR}/${sanitized_name}.domains.txt" "domain" "$sanitized_name"
               else
-                  echo "::error::转换 ${temp_input_file} 失败。"
-                  rm "$temp_input_file" # 转换失败则删除临时文件
+                  echo "::warning::不支持的文件扩展名 '${extension}' 来自 ${url}，跳过。"
+                  rm "$temp_input_file"
               fi
           }
 
@@ -206,7 +234,6 @@ jobs:
               echo "检测到 rule_sources.txt，开始处理自定义链接。"
               while IFS= read -r url || [[ -n "$url" ]]; do
                   if [[ -z "$url" || "$url" =~ ^# ]]; then continue; fi
-                  # 从自定义文件中，也使用源文件名作为规则名
                   name=$(basename "$url" | sed 's/\.[^.]*$//')
                   process_rule "$name" "$url"
               done < "rule_sources.txt"
@@ -237,14 +264,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 添加所有新生成的文件
           git add versioned_rules/ mrs_rules.md
           
-          # 检查是否有文件变动
           if git diff --staged --quiet; then
             echo "没有文件变动，无需提交。"
           else
-            # 使用上一步的输出作为 commit message 的一部分
             git commit -m "feat(rules): Auto update MRS rulesets to version ${{ steps.conversion.outputs.run_dir }}"
             git push
           fi
