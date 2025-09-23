@@ -97,19 +97,34 @@ jobs:
 
                   # 仅当格式为 text (来自 .list/.txt) 时才进行预处理
                   if [[ "$format" == "text" ]]; then
-                      # 预处理：移除类型前缀，为mrs转换做准备
-                      # e.g., from "DOMAIN-SUFFIX,google.com" to "google.com"
-                      awk -F, '{print $2}' "$input_file" > "$temp_clean_input"
+                      # 增强的预处理逻辑：可以同时处理 `TYPE,rule` 和纯 `rule` 两种格式
+                      awk '
+                          # 如果行中包含逗号, 提取第一个逗号之后的所有内容
+                          /,/ {
+                              comma_pos = index($0, ",");
+                              print substr($0, comma_pos + 1);
+                              next;
+                          }
+                          # 如果不包含逗号, 且不是注释或空行, 则打印整行
+                          !/^#/ && !/^[ \t\r\n]*$/ {
+                              print $0;
+                          }
+                      ' "$input_file" > "$temp_clean_input"
                       input_for_mihomo="$temp_clean_input"
                   fi
 
                   echo "  Converting: Type=${type}, Format=${format}"
                   if mihomo convert-ruleset "$type" "$format" "$input_for_mihomo" "$output_file"; then
-                      echo "  Successfully converted to ${output_file}"
+                      echo "  Successfully ran mihomo conversion."
                   else
-                      echo "  Error: Conversion for ${input_file} failed."
+                      echo "  Error: Mihomo command failed for ${input_file}."
                       if [[ "$format" == "text" ]]; then rm -f "$temp_clean_input"; fi
                       return 1
+                  fi
+
+                  # 增加调试信息：检查生成的 mrs 文件是否为空
+                  if [ ! -s "$output_file" ]; then
+                      echo "  [Debug] WARNING: Generated MRS file IS EMPTY: $output_file. This can happen if source contains no valid rules."
                   fi
                   
                   # 如果创建了临时文件，则清理
@@ -146,7 +161,7 @@ jobs:
               > "$ipcidr_file"
               > "$other_file"
               
-              # 使用 awk 高效拆分文件，并保持原始格式
+              # 【已修复】使用更健壮的 awk 逻辑来正确分类带前缀和不带前缀的规则
               awk -F, '
                   function strip(s) {
                       sub(/^[ \t\r\n]+/, "", s);
@@ -155,14 +170,20 @@ jobs:
                   }
                   !/^#/ && !/^[ \t\r\n]*$/ {
                       line = strip($0);
-                      type = toupper(strip($1));
-                      if (type == "DOMAIN" || type == "DOMAIN-SUFFIX" || type == "DOMAIN-KEYWORD") {
-                          print line >> "'"$domain_file"'"
-                      } else if (type == "IP-CIDR") {
-                          print line >> "'"$ipcidr_file"'"
-                      } else {
-                          print line >> "'"$other_file"'"
+                      # 优先处理带前缀的显式规则
+                      if (/,/) {
+                          type = toupper(strip($1));
+                          if (type == "DOMAIN" || type == "DOMAIN-SUFFIX" || type == "DOMAIN-KEYWORD") {
+                              print line >> "'"$domain_file"'"; next;
+                          }
+                          if (type == "IP-CIDR") {
+                              print line >> "'"$ipcidr_file"'"; next;
+                          }
+                          # 如果类型未知，则归为 other
+                          print line >> "'"$other_file"'"; next;
                       }
+                      # 如果不带前缀，则默认视为 domain 规则
+                      print line >> "'"$domain_file"'";
                   }
               ' "$input_file"
 
@@ -204,6 +225,11 @@ jobs:
                   return
               fi
 
+              if [ ! -s "$downloaded_file" ]; then
+                  echo "  Warning: Downloaded file is empty, skipping processing."
+                  return
+              fi
+
               if [[ "$extension" == "yaml" ]]; then
                   # 对 .yaml 文件，直接进行 domain 转换
                   convert_and_commit_rule "domain" "yaml" "$downloaded_file" "$sanitized_filename_base" "$RULES_OUTPUT_DIR" "$original_name"
@@ -215,6 +241,7 @@ jobs:
           }
 
           # --- 主逻辑 ---
+          # 脚本的核心逻辑：无论内容是否更新，每次都会完整执行下载、转换和输出的全部流程。
           if [ -s "rule_sources.txt" ]; then
               echo "Custom 'rule_sources.txt' found, processing it."
               while IFS= read -r url; do
@@ -328,4 +355,3 @@ jobs:
             git commit -m "${{ env.COMMIT_MSG }}"
             git push --follow-tags
           fi
-
