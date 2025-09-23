@@ -1,307 +1,241 @@
-# Rule Providers for this version (versioned_rules/2025-09-23)
-# Generated at: 2025-09-23 02:10:56 UTC
-rule-providers:
-  # 原始名称: 👨‍💻 GitHub
-  GitHub:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/GitHub.mrs"
-    path: "./rules/GitHub.mrs"
-    interval: 86400
+# Action 名称
+name: Auto Convert Clash Rules to MRS
 
-  # 原始名称: 🎯 国内流量
-  SteamCN:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/SteamCN.mrs"
-    path: "./rules/SteamCN.mrs"
-    interval: 86400
+on:
+  # 允许手动触发
+  workflow_dispatch:
 
-  # 原始名称: 🧚 AI
-  AI:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs"
-    path: "./rules/AI.mrs"
-    interval: 86400
+  # 定时任务：每周日北京时间早上6点运行 (UTC 时间 周六 22:00)
+  schedule:
+    - cron: '0 22 * * 5'
+  
+  # 当 rule_sources.txt 文件被推送到 main 分支时触发
+  push:
+    branches:
+      - main
+    paths:
+      - 'rule_sources.txt'
 
-  # 原始名称: 🧚 AI
-  AI:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs"
-    path: "./rules/AI.mrs"
-    interval: 86400
+jobs:
+  build-ruleset:
+    runs-on: ubuntu-latest
+    # 授予 Action 写入仓库内容的权限
+    permissions:
+      contents: write
+    steps:
+      # 1. 检出你的仓库代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  # 原始名称: 🧚 AI
-  AI:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs"
-    path: "./rules/AI.mrs"
-    interval: 86400
+      # 2. 安装依赖 (jq 用于解析 JSON)
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-  # 原始名称: 🧚 AI
-  AI:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs"
-    path: "./rules/AI.mrs"
-    interval: 86400
+      # 3. 下载并设置 Mihomo
+      - name: Setup Mihomo
+        run: |
+          # 从 GitHub API 获取最新的 Mihomo release URL，并筛选出唯一的 compatible 版本
+          MIHOMO_LATEST_URL=$(curl -s "https://api.github.com/repos/MetaCubeX/mihomo/releases/latest" | jq -r '.assets[] | select(.name | contains("linux-amd64-compatible") and endswith(".gz")) | .browser_download_url' | head -n 1)
+          
+          if [ -z "$MIHOMO_LATEST_URL" ]; then
+            echo "::error::无法找到 Mihomo 的 compatible 版本下载链接。"
+            exit 1
+          fi
 
-  # 原始名称: 🧚 AI
-  AI:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs"
-    path: "./rules/AI.mrs"
-    interval: 86400
+          echo "Downloading Mihomo from $MIHOMO_LATEST_URL"
+          # 下载、解压、赋予执行权限并移动到系统路径
+          wget -qO mihomo.gz "$MIHOMO_LATEST_URL"
+          gunzip mihomo.gz
+          chmod +x mihomo
+          sudo mv mihomo /usr/local/bin/
+          # 验证安装成功
+          echo "Mihomo version:"
+          mihomo -v
 
-  # 原始名称: 🧚 AI
-  AI:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AI.mrs"
-    path: "./rules/AI.mrs"
-    interval: 86400
+      # 4. 运行转换脚本 (已修复)
+      - name: Run Conversion Script
+        id: conversion
+        run: |
+          # --- 1. 初始化目录和文件 ---
+          MAIN_OUTPUT_DIR="versioned_rules"
+          mkdir -p "$MAIN_OUTPUT_DIR"
 
-  # 原始名称: 🎯 国内流量
-  Lan:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Lan.mrs"
-    path: "./rules/Lan.mrs"
-    interval: 86400
+          # 根据日期和现有文件夹数量，确定本次运行的唯一输出目录名
+          TODAY=$(date -u +'%Y-%m-%d')
+          RUN_OUTPUT_DIR_BASE="${MAIN_OUTPUT_DIR}/${TODAY}"
+          RUN_OUTPUT_DIR="${RUN_OUTPUT_DIR_BASE}"
+          COUNT=1
+          while [ -d "$RUN_OUTPUT_DIR" ]; do
+              RUN_OUTPUT_DIR="${RUN_OUTPUT_DIR_BASE}-${COUNT}"
+              COUNT=$((COUNT + 1))
+          done
+          echo "本次运行的输出目录为: ${RUN_OUTPUT_DIR}"
+          # 将目录名设置为 job 的输出，方便后续步骤使用
+          echo "run_dir=${RUN_OUTPUT_DIR}" >> $GITHUB_OUTPUT
 
-  # 原始名称: 🎯 国内流量
-  UnBan:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/UnBan.mrs"
-    path: "./rules/UnBan.mrs"
-    interval: 86400
+          # 定义本次运行的子目录和文件路径
+          DOWNLOAD_DIR="downloads_tmp"
+          RULES_SUBDIR="${RUN_OUTPUT_DIR}/rules"
+          CONFIG_FILE="${RUN_OUTPUT_DIR}/provider_config.yaml"
+          SUMMARY_FILE="mrs_rules.md" # 根目录的汇总文件，始终指向最新版本
 
-  # 原始名称: 🚀 国外流量
-  PikPak:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/PikPak.mrs"
-    path: "./rules/PikPak.mrs"
-    interval: 86400
+          # 创建所需目录
+          mkdir -p "$DOWNLOAD_DIR" "$RULES_SUBDIR"
 
-  # 原始名称: 🛸 IP归属地伪装
-  IP:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/IP.mrs"
-    path: "./rules/IP.mrs"
-    interval: 86400
+          # 初始化本次运行的 provider 配置文件
+          echo "# Rule Providers for this version (${RUN_OUTPUT_DIR})" > "$CONFIG_FILE"
+          echo "# Generated at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> "$CONFIG_FILE"
+          echo "rule-providers:" >> "$CONFIG_FILE"
 
-  # 原始名称: 🛑 广告拦截
-  BanAD:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/BanAD.mrs"
-    path: "./rules/BanAD.mrs"
-    interval: 86400
+          # 初始化根目录的汇总文件
+          rm -f "$SUMMARY_FILE"
+          echo "# MRS 规则集列表 (最新)" > "$SUMMARY_FILE"
+          echo "自动更新于: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> "$SUMMARY_FILE"
+          echo "当前版本位于: \`[${RUN_OUTPUT_DIR}](./${RUN_OUTPUT_DIR})\`" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
 
-  # 原始名称: 🛑 广告拦截
-  ZhihuAds:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/ZhihuAds.mrs"
-    path: "./rules/ZhihuAds.mrs"
-    interval: 86400
 
-  # 原始名称: 📹 YouTube
-  YouTube:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/YouTube.mrs"
-    path: "./rules/YouTube.mrs"
-    interval: 86400
+          # --- 2. 定义核心处理函数 ---
+          process_rule() {
+              local name="$1"
+              local url="$2"
+              
+              # 清理 URL，移除末尾的回车符和多余空格
+              url=$(echo "$url" | tr -d '\r' | xargs)
 
-  # 原始名称: 🎥 Netflix
-  Netflix:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Netflix.mrs"
-    path: "./rules/Netflix.mrs"
-    interval: 86400
+              # 验证 URL 是否以 http/https 开头，跳过 GEOIP, FINAL 等特殊规则
+              if [[ ! "$url" =~ ^https?:// ]]; then
+                  echo "Skipping non-URL rule: Name='${name}', Content='${url}'"
+                  return
+              fi
 
-  # 原始名称: 🐹 DisneyPlus
-  DisneyPlus:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/DisneyPlus.mrs"
-    path: "./rules/DisneyPlus.mrs"
-    interval: 86400
+              local github_raw_url_base="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}"
 
-  # 原始名称: 📽️ PrimeVideo
-  PrimeVideo:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/PrimeVideo.mrs"
-    path: "./rules/PrimeVideo.mrs"
-    interval: 86400
+              echo "---"
+              echo "Processing: Name='${name}', URL='${url}'"
 
-  # 原始名称: 🎦 HBO
-  HBO:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/HBO.mrs"
-    path: "./rules/HBO.mrs"
-    interval: 86400
+              # 核心修改：使用源文件名作为基础来命名文件，确保唯一性
+              local sanitized_name=$(basename "$url" | sed 's/\.[^.]*$//' | sed 's/[^a-zA-Z0-9_.-]//g')
+              
+              # 如果处理后文件名为空（例如 URL 以 / 结尾），则给一个默认名
+              if [[ -z "$sanitized_name" ]]; then
+                  sanitized_name="rule_$(date +%s%N)"
+              fi
 
-  # 原始名称: 🎦 HBO
-  HBO:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/HBO.mrs"
-    path: "./rules/HBO.mrs"
-    interval: 86400
+              local extension="${url##*.}"
+              local temp_input_file="${DOWNLOAD_DIR}/${sanitized_name}.${extension}"
+              
+              # 下载规则文件，带3次重试
+              echo "Downloading to ${temp_input_file}..."
+              if ! curl -L --retry 3 --retry-delay 5 --silent --show-error -o "$temp_input_file" "$url"; then
+                  echo "::warning::下载 ${url} 失败 (已重试3次)，跳过。"
+                  return
+              fi
+              
+              if [ ! -s "$temp_input_file" ]; then
+                  echo "::warning::下载的文件 ${temp_input_file} 为空，跳过。"
+                  rm "$temp_input_file"
+                  return
+              fi
 
-  # 原始名称: 🎦 HBO
-  HBO:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/HBO.mrs"
-    path: "./rules/HBO.mrs"
-    interval: 86400
+              # 判断规则类型 (domain/ipcidr) 和格式 (yaml/text)
+              local rule_type=""
+              local rule_format=""
+              case "$extension" in
+                  yaml|yml)
+                      rule_type="domain"
+                      rule_format="yaml"
+                      ;;
+                  txt|list)
+                      if grep -qE '([0-9]{1,3}\.){3}[0-9]{1,3}' "$temp_input_file"; then
+                          rule_type="ipcidr"
+                      else
+                          rule_type="domain"
+                      fi
+                      rule_format="text"
+                      ;;
+                  *)
+                      echo "::warning::不支持的文件扩展名 '${extension}' 来自 ${url}，跳过。"
+                      rm "$temp_input_file"
+                      return
+                      ;;
+              esac
+              
+              echo "Converting: Type=${rule_type}, Format=${rule_format}"
 
-  # 原始名称: 🍎 AppleTV
-  AppleTV:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/AppleTV.mrs"
-    path: "./rules/AppleTV.mrs"
-    interval: 86400
+              local final_source_file="${RULES_SUBDIR}/${sanitized_name}.${extension}"
+              local output_file="${RULES_SUBDIR}/${sanitized_name}.mrs"
+              
+              # 使用 mihomo 进行转换
+              if mihomo convert-ruleset "$rule_type" "$rule_format" "$temp_input_file" "$output_file"; then
+                  echo "成功转换为 ${output_file}"
+                  # 将源文件移动到本次运行的 'rules' 目录中进行归档
+                  mv "$temp_input_file" "$final_source_file"
 
-  # 原始名称: 🎬 EMBY
-  EMBY:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/EMBY.mrs"
-    path: "./rules/EMBY.mrs"
-    interval: 86400
+                  # A. 将规则追加到本次运行的 provider_config.yaml 中
+                  # provider 的 key 使用处理后的文件名，确保唯一性
+                  echo "  # 原始名称: ${name}" >> "$CONFIG_FILE"
+                  echo "  ${sanitized_name}:" >> "$CONFIG_FILE"
+                  echo "    type: http" >> "$CONFIG_FILE"
+                  echo "    behavior: ${rule_type}" >> "$CONFIG_FILE"
+                  echo "    url: \"${github_raw_url_base}/${output_file}\"" >> "$CONFIG_FILE"
+                  echo "    path: \"./rules/${sanitized_name}.mrs\"" >> "$CONFIG_FILE"
+                  echo "    interval: 86400" >> "$CONFIG_FILE"
+                  echo "" >> "$CONFIG_FILE"
 
-  # 原始名称: 🎬 EMBY
-  EMBY:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/EMBY.mrs"
-    path: "./rules/EMBY.mrs"
-    interval: 86400
+                  # B. 将规则追加到根目录的汇总文件 mrs_rules.md 中
+                  # RULE-SET 仍然使用原始的 emoji+名称
+                  echo "- RULE-SET,${name},${github_raw_url_base}/${output_file}" >> "$SUMMARY_FILE"
+              else
+                  echo "::error::转换 ${temp_input_file} 失败。"
+                  rm "$temp_input_file" # 转换失败则删除临时文件
+              fi
+          }
 
-  # 原始名称: 📺 巴哈姆特
-  Bahamut:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Bahamut.mrs"
-    path: "./rules/Bahamut.mrs"
-    interval: 86400
+          # --- 3. 主逻辑 ---
+          if [[ -f "rule_sources.txt" && -s "rule_sources.txt" ]]; then
+              echo "检测到 rule_sources.txt，开始处理自定义链接。"
+              while IFS= read -r url || [[ -n "$url" ]]; do
+                  if [[ -z "$url" || "$url" =~ ^# ]]; then continue; fi
+                  # 从自定义文件中，也使用源文件名作为规则名
+                  name=$(basename "$url" | sed 's/\.[^.]*$//')
+                  process_rule "$name" "$url"
+              done < "rule_sources.txt"
+          else
+              echo "rule_sources.txt 不存在或为空，使用默认的 .ini 文件。"
+              DEFAULT_INI_URL="https://raw.githubusercontent.com/cutethotw/ClashRule/main/GeneralClashRule.ini"
+              INI_FILE="${DOWNLOAD_DIR}/GeneralClashRule.ini"
+              
+              if ! curl -L --retry 3 -o "$INI_FILE" "$DEFAULT_INI_URL"; then
+                  echo "::error::无法下载默认的 INI 配置文件，任务中止。"
+                  exit 1
+              fi
+              
+              grep -E '^\s*;?ruleset=' "$INI_FILE" | sed -E 's/^\s*;?ruleset=//' | sed 's/,clash-classic:/,/' | while IFS=, read -r name url; do
+                  process_rule "$name" "$url"
+              done
+          fi
 
-  # 原始名称: 📺 Bilibili
-  Bilibili:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Bilibili.mrs"
-    path: "./rules/Bilibili.mrs"
-    interval: 86400
+          echo "--- 处理完成 ---"
+          echo "查看本次生成的配置文件: ${CONFIG_FILE}"
+          echo "查看最新的汇总文件: ${SUMMARY_FILE}"
 
-  # 原始名称: 🎵 Spotify
-  Spotify:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Spotify.mrs"
-    path: "./rules/Spotify.mrs"
-    interval: 86400
+          rm -rf "$DOWNLOAD_DIR" # 清理临时下载目录
 
-  # 原始名称: 🎶 TikTok
-  TikTok:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/TikTok.mrs"
-    path: "./rules/TikTok.mrs"
-    interval: 86400
-
-  # 原始名称: 🌍 国外媒体
-  GlobalMedia_Classical:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/GlobalMedia_Classical.mrs"
-    path: "./rules/GlobalMedia_Classical.mrs"
-    interval: 86400
-
-  # 原始名称: 🌏 国内媒体
-  ChinaMedia:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/ChinaMedia.mrs"
-    path: "./rules/ChinaMedia.mrs"
-    interval: 86400
-
-  # 原始名称: 🎯 国内流量
-  GoogleCN:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/GoogleCN.mrs"
-    path: "./rules/GoogleCN.mrs"
-    interval: 86400
-
-  # 原始名称: Ⓜ️ 微软云盘
-  OneDrive:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/OneDrive.mrs"
-    path: "./rules/OneDrive.mrs"
-    interval: 86400
-
-  # 原始名称: Ⓜ️ 微软服务
-  Microsoft:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Microsoft.mrs"
-    path: "./rules/Microsoft.mrs"
-    interval: 86400
-
-  # 原始名称: 🍎 苹果服务
-  Apple:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Apple.mrs"
-    path: "./rules/Apple.mrs"
-    interval: 86400
-
-  # 原始名称: 📲 Telegram
-  Telegram:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Telegram.mrs"
-    path: "./rules/Telegram.mrs"
-    interval: 86400
-
-  # 原始名称: 🤖 Discord
-  Discord:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Discord.mrs"
-    path: "./rules/Discord.mrs"
-    interval: 86400
-
-  # 原始名称: 🎮 游戏平台
-  Game:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Game.mrs"
-    path: "./rules/Game.mrs"
-    interval: 86400
-
-  # 原始名称: 🎯 国内流量
-  Download:
-    type: http
-    behavior: domain
-    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23/rules/Download.mrs"
-    path: "./rules/Download.mrs"
-    interval: 86400
-
+      # 5. 提交并推送生成的 .mrs 文件和汇总文件到仓库
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 添加所有新生成的文件
+          git add versioned_rules/ mrs_rules.md
+          
+          # 检查是否有文件变动
+          if git diff --staged --quiet; then
+            echo "没有文件变动，无需提交。"
+          else
+            # 使用上一步的输出作为 commit message 的一部分
+            git commit -m "feat(rules): Auto update MRS rulesets to version ${{ steps.conversion.outputs.run_dir }}"
+            git push
+          fi
