@@ -349,11 +349,7 @@ jobs:
           echo "Rules Processed: $total_processed"
           echo "Rules Succeeded: $total_succeeded"
           echo "Rules Skipped (Invalid/Empty): $total_skipped"
-          echo "Rules Failed (Download/Convert): 's/^[ \t-]*//' | awk "$awk_script"
-              else # text
-                  awk '!/^#/ && !/^[ \t\r\n]*$/' "$input_file" | awk "$awk_script"
-              fi
-$total_failed"
+          echo "Rules Failed (Download/Convert): $total_failed"
 
       - name: Commit and Push to repository
         run: |
