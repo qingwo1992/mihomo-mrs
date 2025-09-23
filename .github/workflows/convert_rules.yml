@@ -92,21 +92,28 @@ jobs:
               else
                   local output_file="$output_dir/${base_name}.mrs"
                   url_path+=".mrs"
+                  local input_for_mihomo="$input_file" # 默认直接使用输入文件
                   local temp_clean_input="cleaned_for_mrs.tmp"
 
-                  # 预处理：移除类型前缀，为mrs转换做准备
-                  # e.g., from "DOMAIN-SUFFIX,google.com" to "google.com"
-                  awk -F, '{print $2}' "$input_file" > "$temp_clean_input"
+                  # 仅当格式为 text (来自 .list/.txt) 时才进行预处理
+                  if [[ "$format" == "text" ]]; then
+                      # 预处理：移除类型前缀，为mrs转换做准备
+                      # e.g., from "DOMAIN-SUFFIX,google.com" to "google.com"
+                      awk -F, '{print $2}' "$input_file" > "$temp_clean_input"
+                      input_for_mihomo="$temp_clean_input"
+                  fi
 
                   echo "  Converting: Type=${type}, Format=${format}"
-                  if mihomo convert-ruleset "$type" "$format" "$temp_clean_input" "$output_file"; then
+                  if mihomo convert-ruleset "$type" "$format" "$input_for_mihomo" "$output_file"; then
                       echo "  Successfully converted to ${output_file}"
                   else
                       echo "  Error: Conversion for ${input_file} failed."
-                      rm -f "$temp_clean_input"
+                      if [[ "$format" == "text" ]]; then rm -f "$temp_clean_input"; fi
                       return 1
                   fi
-                  rm -f "$temp_clean_input"
+                  
+                  # 如果创建了临时文件，则清理
+                  if [[ "$format" == "text" ]]; then rm -f "$temp_clean_input"; fi
               fi
 
               if [ -s "$output_file" ]; then
@@ -198,7 +205,7 @@ jobs:
               fi
 
               if [[ "$extension" == "yaml" ]]; then
-                  # 假设 yaml 文件是纯 domain 类型
+                  # 对 .yaml 文件，直接进行 domain 转换
                   convert_and_commit_rule "domain" "yaml" "$downloaded_file" "$sanitized_filename_base" "$RULES_OUTPUT_DIR" "$original_name"
               elif [[ "$extension" == "txt" || "$extension" == "list" ]]; then
                   split_and_convert "$downloaded_file" "$sanitized_filename_base" "$RULES_OUTPUT_DIR" "$original_name"
@@ -321,3 +328,4 @@ jobs:
             git commit -m "${{ env.COMMIT_MSG }}"
             git push --follow-tags
           fi
+
