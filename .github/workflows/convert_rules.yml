@@ -52,7 +52,7 @@ jobs:
           echo "Mihomo version:"
           mihomo -v
 
-      # 4. 运行转换脚本 (归档修复版)
+      # 4. 运行转换脚本 (稳定链接版)
       - name: Run Conversion Script
         id: conversion
         run: |
@@ -84,7 +84,8 @@ jobs:
 
           # 初始化配置文件和汇总文件
           echo "# Rule Providers for this version (${RUN_OUTPUT_DIR})" > "$CONFIG_FILE"
-          echo "# Generated at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> "$CONFIG_FILE"
+          echo "# Generated at: $(date -u '+%Y-%m-%d %HM%S UTC')" >> "$CONFIG_FILE"
+          echo "# Stable URLs always point to the 'latest' directory." >> "$CONFIG_FILE"
           echo "rule-providers:" >> "$CONFIG_FILE"
 
           rm -f "$SUMMARY_FILE"
@@ -96,7 +97,7 @@ jobs:
           # --- 2. 定义核心处理函数 ---
 
           # 全局变量，用于获取 GitHub Raw URL
-          GITHUB_RAW_URL_BASE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}"
+          GITHUB_RAW_URL_BASE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main"
 
           # 转换函数 (已更新)
           convert_and_commit_rule() {
@@ -125,19 +126,22 @@ jobs:
                   echo "     Success: 成功转换"
                   # 归档原始的、带有前缀的分割文件
                   mv "$source_file" "${RULES_SUBDIR}/${final_sanitized_name}.txt"
+                  
+                  # --- 核心修改: 生成稳定的 URL ---
+                  local stable_url="${GITHUB_RAW_URL_BASE}/latest/${final_sanitized_name}.mrs"
 
                   # A. 追加到 provider_config.yaml
                   echo "  # 原始名称: ${display_name}" >> "$CONFIG_FILE"
                   echo "  ${final_sanitized_name}:" >> "$CONFIG_FILE"
                   echo "    type: http" >> "$CONFIG_FILE"
                   echo "    behavior: ${rule_type}" >> "$CONFIG_FILE"
-                  echo "    url: \"${GITHUB_RAW_URL_BASE}/${output_file_path}\"" >> "$CONFIG_FILE"
+                  echo "    url: \"${stable_url}\"" >> "$CONFIG_FILE"
                   echo "    path: \"./rules/${final_sanitized_name}.mrs\"" >> "$CONFIG_FILE"
                   echo "    interval: 86400" >> "$CONFIG_FILE"
                   echo "" >> "$CONFIG_FILE"
 
                   # B. 追加到 mrs_rules.md
-                  echo "- RULE-SET,${display_name},${GITHUB_RAW_URL_BASE}/${output_file_path}" >> "$SUMMARY_FILE"
+                  echo "- RULE-SET,${display_name},${stable_url}" >> "$SUMMARY_FILE"
               else
                   echo "::error::转换 ${source_file} 失败。"
               fi
@@ -183,35 +187,19 @@ jobs:
                   local ipcidr_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.ips.txt"
                   local other_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.other.list"
 
-                  # --- 核心修改：awk 只分类，不修改内容 ---
                   awk -v domain_f="$domain_temp_file" -v ip_f="$ipcidr_temp_file" -v other_f="$other_temp_file" '
                   {
-                      # 为匹配逻辑创建一个临时变量，但始终打印原始行
                       original_line = $0
-                      
                       match_line = $0
                       sub(/#.*/, "", match_line)
                       gsub(/^[ \t]+|[ \t]+$/, "", match_line)
-                      
-                      if (match_line == "") {
-                          next
-                      }
-                      
-                      if (match_line ~ /^(DOMAIN|DOMAIN-SUFFIX|DOMAIN-KEYWORD),/) {
-                          print original_line >> domain_f
-                          next
-                      }
-                      
-                      if (match_line ~ /^IP-CIDR,/) {
-                          print original_line >> ip_f
-                          next
-                      }
-                      
+                      if (match_line == "") { next }
+                      if (match_line ~ /^(DOMAIN|DOMAIN-SUFFIX|DOMAIN-KEYWORD),/) { print original_line >> domain_f; next }
+                      if (match_line ~ /^IP-CIDR,/) { print original_line >> ip_f; next }
                       print original_line >> other_f
                   }
                   ' "$temp_input_file"
                   
-                  # 后续逻辑不变，检查拆分出的文件并处理
                   if [ -s "$domain_temp_file" ]; then
                       convert_and_commit_rule "${name} (Domain)" "$domain_temp_file" "domain" "$sanitized_name"
                   fi
@@ -223,25 +211,32 @@ jobs:
                       local final_other_filepath="${RULES_SUBDIR}/${final_other_filename}"
                       echo "  -> Archiving unsupported rules to ${final_other_filepath}"
                       mv "$other_temp_file" "$final_other_filepath"
+                      
+                      # --- 核心修改: 生成稳定的 URL ---
+                      local stable_other_url="${GITHUB_RAW_URL_BASE}/latest/${final_other_filename}"
 
                       echo "  # 原始名称: ${name} (Unsupported)" >> "$CONFIG_FILE"
                       echo "  ${sanitized_name}_other:" >> "$CONFIG_FILE"
                       echo "    type: http" >> "$CONFIG_FILE"
                       echo "    behavior: classical" >> "$CONFIG_FILE"
-                      echo "    url: \"${GITHUB_RAW_URL_BASE}/${final_other_filepath}\"" >> "$CONFIG_FILE"
+                      echo "    url: \"${stable_other_url}\"" >> "$CONFIG_FILE"
                       echo "    path: \"./rules/${final_other_filename}\"" >> "$CONFIG_FILE"
                       echo "    interval: 86400" >> "$CONFIG_FILE"
                       echo "" >> "$CONFIG_FILE"
 
-                      echo "- RULE-SET,${name} (Unsupported),${GITHUB_RAW_URL_BASE}/${final_other_filepath}" >> "$SUMMARY_FILE"
+                      echo "- RULE-SET,${name} (Unsupported),${stable_other_url}" >> "$SUMMARY_FILE"
                   fi
 
                   rm "$temp_input_file"
 
               elif [[ "$extension" == "yaml" || "$extension" == "yml" ]]; then
-                  echo "  File is a .yaml, converting as pure domain..."
-                  mv "$temp_input_file" "${DOWNLOAD_DIR}/${sanitized_name}.domains.txt"
-                  convert_and_commit_rule "$name" "${DOWNLOAD_DIR}/${sanitized_name}.domains.txt" "domain" "$sanitized_name"
+                  # YAML 文件需要特殊处理，因为它们已经是纯域名列表
+                  local pure_domain_list="${DOWNLOAD_DIR}/${sanitized_name}.domains.txt"
+                  # 提取 payload 下的内容
+                  grep -E "^\s*-\s*[\"']?(\+.)?[a-zA-Z0-9]" "$temp_input_file" | sed -E "s/^\s*-\s*[\"']?//; s/[\"']?\s*$//" > "$pure_domain_list"
+                  convert_and_commit_rule "$name" "$pure_domain_list" "domain" "$sanitized_name"
+                  # 归档原始 yaml 文件
+                  mv "$temp_input_file" "${RULES_SUBDIR}/${sanitized_name}.yaml"
               else
                   echo "::warning::不支持的文件扩展名 '${extension}' 来自 ${url}，跳过。"
                   rm "$temp_input_file"
@@ -271,6 +266,18 @@ jobs:
               done
           fi
 
+          # --- 4. 新增: 创建 'latest' 目录并复制最新文件 ---
+          echo "---"
+          echo "Creating 'latest' directory with the most recent rules..."
+          rm -rf latest
+          mkdir -p latest
+          if [ -d "${RULES_SUBDIR}" ] && [ "$(ls -A ${RULES_SUBDIR})" ]; then
+            cp -r "${RULES_SUBDIR}/." latest/
+            echo "'latest' directory has been updated."
+          else
+            echo "'rules' subdirectory is empty, skipping copy to 'latest'."
+          fi
+
           echo "--- 处理完成 ---"
           echo "查看本次生成的配置文件: ${CONFIG_FILE}"
           echo "查看最新的汇总文件: ${SUMMARY_FILE}"
@@ -283,7 +290,8 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          git add versioned_rules/ mrs_rules.md
+          # --- 核心修改: 将 latest 目录也加入提交 ---
+          git add versioned_rules/ latest/ mrs_rules.md
           
           if git diff --staged --quiet; then
             echo "没有文件变动，无需提交。"
