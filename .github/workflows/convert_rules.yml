@@ -104,7 +104,7 @@ jobs:
                   local temp_clean_input="cleaned_for_mrs.tmp"
 
                   if [[ "$format" == "text" ]]; then
-                      # 【已修复】使用更健壮的 awk 命令，正确处理带后缀的 IP-CIDR 和各类 DOMAIN 规则
+                      # 使用更健壮的 awk 命令，正确处理带后缀的 IP-CIDR 和各类 DOMAIN 规则
                       awk -F, '
                           !/^#/ && !/^[ \t\r\n]*$/ {
                               if (NF > 1) { print $2; } else { print $0; }
@@ -131,55 +131,61 @@ jobs:
                   echo "  ${provider_name}: { <<: *${anchor_name}, url: '${full_url}' }" >> "$PROVIDER_LINES_TMP"
                   echo "- RULE-SET,${provider_name},${original_name_with_emoji}" >> "$RULESET_LINES_TMP"
               elif [[ "$success" == true ]]; then
-                  # 成功转换但文件为空
-                  total_failed+=1 # 算作一种失败
+                  total_failed+=1
                   echo "  Warning: Generated file is empty, conversion likely failed silently. Skipping."
               else
-                  # mihomo 命令直接失败
                   total_failed+=1
               fi
           }
 
-          # 函数：拆分 .list/.txt 并进行转换
+          # 【已更新】函数：拆分 .list/.txt 或已解析的 .yaml 文件并转换
           split_and_convert() {
               local input_file="$1"
               local base_name="$2"
               local output_dir="$3"
               local original_name_with_emoji="$4"
+              local file_type="$5" # "yaml" or "text"
 
-              echo "  File is a .txt/.list, attempting to split into domain/ipcidr/other..."
+              echo "  Splitting ${file_type} file into domain/ipcidr/other..."
               
               local domain_file="${base_name}_domain.txt"
               local ipcidr_file="${base_name}_ipcidr.txt"
               local other_file="${base_name}_other.list"
               > "$domain_file"; > "$ipcidr_file"; > "$other_file"
               
-              awk '
+              local awk_script='
                   function strip(s) {
                       sub(/^[ \t\r\n]+/, "", s);
                       sub(/[ \t\r\n]+$/, "", s);
                       return s;
                   }
-                  !/^#/ && !/^[ \t\r\n]*$/ {
+                  # 主逻辑
+                  {
                       line = strip($0);
                       if (index(line, ",")) {
                           prefix = toupper(substr(line, 1, index(line, ",") - 1));
                           prefix = strip(prefix);
-
                           if (prefix == "DOMAIN" || prefix == "DOMAIN-SUFFIX" || prefix == "DOMAIN-KEYWORD") {
                               print line >> "'"$domain_file"'";
-                          } else if (prefix == "IP-CIDR") {
+                          } else if (prefix == "IP-CIDR" || prefix == "IP-CIDR6") {
                               print line >> "'"$ipcidr_file"'";
                           } else {
                               print line >> "'"$other_file"'";
                           }
                       } else {
+                          # 不带逗号的行默认为域名
                           print line >> "'"$domain_file"'";
                       }
                   }
-              ' "$input_file"
+              '
+              
+              if [[ "$file_type" == "yaml" ]]; then
+                  # 从 payload: 开始解析，并移除 yaml 的 list 格式
+                  sed -n '/payload:/,$p' "$input_file" | sed -e '1d' -e "s/^[ \t-]*'//;s/'$//" -e 's/^[ \t-]*"//;s/"$//' -e 's/^[ \t-]*//' | awk "$awk_script"
+              else # text
+                  awk '!/^#/ && !/^[ \t\r\n]*$/' "$input_file" | awk "$awk_script"
+              fi
 
-              # 【已修复】移除附加的 (Domain), (IP), (Unsupported) 后缀
               if [ -s "$domain_file" ]; then
                   convert_and_commit_rule "domain" "text" "$domain_file" "${base_name}_domain" "$output_dir" "${original_name_with_emoji}"
               fi
@@ -225,10 +231,11 @@ jobs:
                   return
               fi
 
+              # 【已更新】对所有文件类型都使用拆分逻辑
               if [[ "$extension" == "yaml" ]]; then
-                  convert_and_commit_rule "domain" "yaml" "$downloaded_file" "$sanitized_filename_base" "$RULES_OUTPUT_DIR" "$original_name"
+                  split_and_convert "$downloaded_file" "$sanitized_filename_base" "$RULES_OUTPUT_DIR" "$original_name" "yaml"
               elif [[ "$extension" == "txt" || "$extension" == "list" ]]; then
-                  split_and_convert "$downloaded_file" "$sanitized_filename_base" "$RULES_OUTPUT_DIR" "$original_name"
+                  split_and_convert "$downloaded_file" "$sanitized_filename_base" "$RULES_OUTPUT_DIR" "$original_name" "text"
               else
                   total_skipped+=1
                   echo "  Warning: Unsupported file extension '.${extension}', skipping."
@@ -342,7 +349,11 @@ jobs:
           echo "Rules Processed: $total_processed"
           echo "Rules Succeeded: $total_succeeded"
           echo "Rules Skipped (Invalid/Empty): $total_skipped"
-          echo "Rules Failed (Download/Convert): $total_failed"
+          echo "Rules Failed (Download/Convert): 's/^[ \t-]*//' | awk "$awk_script"
+              else # text
+                  awk '!/^#/ && !/^[ \t\r\n]*$/' "$input_file" | awk "$awk_script"
+              fi
+$total_failed"
 
       - name: Commit and Push to repository
         run: |
