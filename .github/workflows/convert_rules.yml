@@ -279,7 +279,8 @@ jobs:
           echo "Generated at: $(date -u --rfc-3339=seconds)" >> "$MRS_RULES_MD"
           echo "" >> "$MRS_RULES_MD"
           echo '```yaml' >> "$MRS_RULES_MD"
-          grep -E -- '- RULE-SET' "$PROVIDER_CONFIG_PATH" >> "$MRS_RULES_MD"
+          # 在 grep 后添加 || true，以防止在没有匹配项时因 set -e 而导致脚本失败
+          grep -E -- '- RULE-SET' "$PROVIDER_CONFIG_PATH" >> "$MRS_RULES_MD" || true
           echo '```' >> "$MRS_RULES_MD"
 
           # --- 创建 latest 目录并复制最新文件 ---
@@ -320,4 +321,3 @@ jobs:
             git commit -m "${{ env.COMMIT_MSG }}"
             git push --follow-tags
           fi
-
