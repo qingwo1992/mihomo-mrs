@@ -52,7 +52,7 @@ jobs:
           echo "Mihomo version:"
           mihomo -v
 
-      # 4. 运行转换脚本 (性能优化版)
+      # 4. 运行转换脚本 (归档修复版)
       - name: Run Conversion Script
         id: conversion
         run: |
@@ -98,22 +98,32 @@ jobs:
           # 全局变量，用于获取 GitHub Raw URL
           GITHUB_RAW_URL_BASE="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}"
 
-          # 新增：转换和提交单个纯净规则文件的函数
+          # 转换函数 (已更新)
           convert_and_commit_rule() {
               local display_name="$1"
-              local source_file="$2"
+              local source_file="$2" # 带有原始格式的文件
               local rule_type="$3" # "domain" or "ipcidr"
               local original_sanitized_name="$4"
 
-              # 为拆分后的文件创建唯一的文件名和 provider key
               local final_sanitized_name="${original_sanitized_name}_${rule_type}"
               local output_file_path="${RULES_SUBDIR}/${final_sanitized_name}.mrs"
               
-              echo "  -> Converting ${source_file} as ${rule_type} to ${output_file_path}"
+              # --- 核心修改: 创建一个干净的临时文件用于转换 ---
+              local source_for_convert="${source_file}.tmp"
               
-              if mihomo convert-ruleset "$rule_type" text "$source_file" "$output_file_path"; then
+              if [[ "$rule_type" == "domain" ]]; then
+                  # 移除行首的 "TYPE," 部分，保留后面的域名
+                  sed -E 's/^[^,]+,//' "$source_file" > "$source_for_convert"
+              elif [[ "$rule_type" == "ipcidr" ]]; then
+                  # 移除 "IP-CIDR," 和 ",no-resolve" 等后缀
+                  sed -E 's/^IP-CIDR,//; s/,.*//' "$source_file" > "$source_for_convert"
+              fi
+              
+              echo "  -> Converting prepared file ${source_for_convert} to ${output_file_path}"
+              
+              if mihomo convert-ruleset "$rule_type" text "$source_for_convert" "$output_file_path"; then
                   echo "     Success: 成功转换"
-                  # 将拆分后的源文件也归档
+                  # 归档原始的、带有前缀的分割文件
                   mv "$source_file" "${RULES_SUBDIR}/${final_sanitized_name}.txt"
 
                   # A. 追加到 provider_config.yaml
@@ -131,6 +141,8 @@ jobs:
               else
                   echo "::error::转换 ${source_file} 失败。"
               fi
+              # 清理临时转换文件
+              rm -f "$source_for_convert"
           }
 
           process_rule() {
@@ -171,38 +183,30 @@ jobs:
                   local ipcidr_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.ips.txt"
                   local other_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.other.list"
 
-                  # --- 性能优化：使用 awk 代替 shell 循环 ---
+                  # --- 核心修改：awk 只分类，不修改内容 ---
                   awk -v domain_f="$domain_temp_file" -v ip_f="$ipcidr_temp_file" -v other_f="$other_temp_file" '
                   {
-                      # 保存原始行，用于 "other" 类别
+                      # 为匹配逻辑创建一个临时变量，但始终打印原始行
                       original_line = $0
                       
-                      # 移除注释和首尾空格
-                      sub(/#.*/, "")
-                      gsub(/^[ \t]+|[ \t]+$/, "")
+                      match_line = $0
+                      sub(/#.*/, "", match_line)
+                      gsub(/^[ \t]+|[ \t]+$/, "", match_line)
                       
-                      # 如果处理后为空行，则跳过
-                      if ($0 == "") {
+                      if (match_line == "") {
                           next
                       }
                       
-                      # 匹配 domain 类型
-                      if ($0 ~ /^(DOMAIN|DOMAIN-SUFFIX|DOMAIN-KEYWORD),/) {
-                          sub(/^(DOMAIN|DOMAIN-SUFFIX|DOMAIN-KEYWORD),/, "")
-                          print $0 >> domain_f
+                      if (match_line ~ /^(DOMAIN|DOMAIN-SUFFIX|DOMAIN-KEYWORD),/) {
+                          print original_line >> domain_f
                           next
                       }
                       
-                      # 匹配 ip-cidr 类型
-                      if ($0 ~ /^IP-CIDR,/) {
-                          sub(/^IP-CIDR,/, "")
-                          # 处理 no-resolve 等情况
-                          split($0, parts, ",")
-                          print parts[1] >> ip_f
+                      if (match_line ~ /^IP-CIDR,/) {
+                          print original_line >> ip_f
                           next
                       }
                       
-                      # 其他所有不匹配的规则，写入 other 文件
                       print original_line >> other_f
                   }
                   ' "$temp_input_file"
@@ -287,4 +291,3 @@ jobs:
             git commit -m "feat(rules): Auto update MRS rulesets to version ${{ steps.conversion.outputs.run_dir }}"
             git push
           fi
-
