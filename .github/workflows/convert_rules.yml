@@ -19,6 +19,9 @@ on:
 jobs:
   build-ruleset:
     runs-on: ubuntu-latest
+    # 授予 Action 写入仓库内容的权限
+    permissions:
+      contents: write
     steps:
       # 1. 检出你的仓库代码
       - name: Checkout repository
@@ -28,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      # 3. 下载并设置 Mihomo (已修复)
+      # 3. 下载并设置 Mihomo
       - name: Setup Mihomo
         run: |
           # 从 GitHub API 获取最新的 Mihomo release URL，并筛选出唯一的 compatible 版本
@@ -49,7 +52,7 @@ jobs:
           echo "Mihomo version:"
           mihomo -v
 
-      # 4. 运行转换脚本
+      # 4. 运行转换脚本 (已修复)
       - name: Run Conversion Script
         id: conversion
         run: |
@@ -96,6 +99,16 @@ jobs:
           process_rule() {
               local name="$1"
               local url="$2"
+              
+              # 清理 URL，移除末尾的回车符和多余空格
+              url=$(echo "$url" | tr -d '\r' | xargs)
+
+              # 新增：验证 URL 是否以 http/https 开头，跳过 GEOIP, FINAL 等特殊规则
+              if [[ ! "$url" =~ ^https?:// ]]; then
+                  echo "Skipping non-URL rule: Name='${name}', Content='${url}'"
+                  return
+              fi
+
               local github_raw_url_base="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}"
 
               echo "---"
@@ -221,3 +234,4 @@ jobs:
             git commit -m "feat(rules): Auto update MRS rulesets to version ${{ steps.conversion.outputs.run_dir }}"
             git push
           fi
+
