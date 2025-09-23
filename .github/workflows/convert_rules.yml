@@ -327,18 +327,23 @@ jobs:
 
           # --- 创建 latest 目录并复制最新文件 ---
           LATEST_DIR="latest"
-          rm -rf "$LATEST_DIR"; mkdir -p "$LATEST_DIR"
+          echo "Ensuring a clean 'latest' directory by removing and recreating it..."
+          rm -rf "$LATEST_DIR"
+          mkdir -p "$LATEST_DIR"
+
           echo "Copying latest rules to /$LATEST_DIR directory..."
           if [ -n "$(ls -A $RULES_OUTPUT_DIR 2>/dev/null)" ]; then
-              cp -r "$RULES_OUTPUT_DIR"/* "$LATEST_DIR/"
+              # 【已更新】使用 -f (force) 标志作为双重保险，确保强制覆盖
+              cp -rf "$RULES_OUTPUT_DIR"/* "$LATEST_DIR/"
           else
               echo "No new rule files were generated, skipping copy to latest."
           fi
-          cp "$PROVIDER_CONFIG_PATH" "$LATEST_DIR/provider_config.yaml"
+          # 【已更新】使用 -f (force) 标志作为双重保险
+          cp -f "$PROVIDER_CONFIG_PATH" "$LATEST_DIR/provider_config.yaml"
 
           # --- 将最新的 provider_config.yaml 复制到根目录 ---
           echo "Copying latest provider_config.yaml to root directory..."
-          cp "$LATEST_DIR/provider_config.yaml" ./provider_config.yaml
+          cp -f "$LATEST_DIR/provider_config.yaml" ./provider_config.yaml
 
           # 设置 git commit 的 message
           echo "COMMIT_MSG=feat(rules): Auto update MRS rulesets to version $VERSION_TAG" >> $GITHUB_ENV
