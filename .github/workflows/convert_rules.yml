@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all tags, so we can count previous runs on the same day.
 
       - name: Install dependencies (jq, curl, wget)
         run: sudo apt-get update && sudo apt-get install -y jq curl wget
@@ -227,9 +229,17 @@ jobs:
                   # 移除行首的 'ruleset=' 和可能的 'clash-classic:'
                   line_content=$(echo "$line" | sed -e 's/^\s*ruleset=//' -e 's/clash-classic://')
                   
-                  # 提取名称和 URL
-                  original_name=$(echo "$line_content" | cut -d, -f1 | xargs)
-                  url=$(echo "$line_content" | cut -d, -f2- | xargs)
+                  # 更健壮的提取逻辑
+                  # URL 是最后一个逗号之后的所有内容
+                  url=$(echo "$line_content" | sed -e 's/.*,//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
+                  # 名称是第一个逗号之前的所有内容
+                  original_name=$(echo "$line_content" | sed -e 's/,.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
+
+                  # 增加一个检查，防止从格式错误的行中提取出空URL
+                  if [ -z "$url" ]; then
+                      echo "  Warning: Could not extract a valid URL from line: '$line'. Skipping."
+                      continue
+                  fi
                   
                   process_rule "$original_name" "$url"
               done
