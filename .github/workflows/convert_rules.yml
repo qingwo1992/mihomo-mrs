@@ -239,28 +239,41 @@ jobs:
           }
 
           # --- 主逻辑 ---
+          
+          # 【已更新】如果 rule_sources.txt 存在，则处理它
           if [ -s "rule_sources.txt" ]; then
               echo "Custom 'rule_sources.txt' found, processing it."
-              while IFS= read -r url; do
-                  # 【已修复】增加对回车符 \r 的清理
-                  url=$(echo "$url" | tr -d '\r' | xargs)
+              while IFS= read -r line; do
+                  line=$(echo "$line" | tr -d '\r' | xargs)
+                  if [ -z "$line" ]; then continue; fi
+                  
+                  # 【已更新】智能解析：同时支持 ini 格式和纯 URL 格式
+                  if [[ "$line" == *"ruleset="* ]]; then
+                      line_content=$(echo "$line" | sed -e 's/^\s*ruleset=//' -e 's/clash-classic://')
+                      url=$(echo "$line_content" | sed -e 's/.*,//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
+                      original_name=$(echo "$line_content" | sed -e 's/,.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
+                  else
+                      url="$line"
+                      # 【已修复】移除了错误的 'local' 关键字
+                      name=$(basename "$url" | sed 's/\.[^.]*$//')
+                      original_name="$name"
+                  fi
+
                   if [ -n "$url" ]; then
-                      local name=$(basename "$url" | sed 's/\.[^.]*$//')
-                      process_rule "$name" "$url"
+                      process_rule "$original_name" "$url"
                   fi
               done < rule_sources.txt
+          fi
+          
+          # 【已更新】现在总是处理默认的 .ini 文件
+          echo "Processing default .ini file."
+          INI_URL="https://raw.githubusercontent.com/cutethotw/ClashRule/main/GeneralClashRule.ini"
+          INI_FILE="$DOWNLOADS_DIR/GeneralClashRule.ini"
+          if ! curl -L --fail -s -o "$INI_FILE" "$INI_URL"; then
+              echo "WARNING: Could not download the main .ini file. Skipping."
           else
-              echo "'rule_sources.txt' not found or is empty, using default .ini file."
-              INI_URL="https://raw.githubusercontent.com/cutethotw/ClashRule/main/GeneralClashRule.ini"
-              INI_FILE="$DOWNLOADS_DIR/GeneralClashRule.ini"
-              if ! curl -L --fail -s -o "$INI_FILE" "$INI_URL"; then
-                  echo "FATAL: Could not download the main .ini file. Aborting."
-                  exit 1
-              fi
-
-              # 【已修复】使用进程替换 <(...) 来避免子shell问题，确保计数器在主脚本中被修改
+              # 使用进程替换 <(...) 来避免子shell问题
               while IFS= read -r line; do
-                  # 【已修复】在这里也增加对回车符 \r 的清理
                   line_content=$(echo "$line" | tr -d '\r' | sed -e 's/^\s*ruleset=//' -e 's/clash-classic://')
                   url=$(echo "$line_content" | sed -e 's/.*,//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
                   original_name=$(echo "$line_content" | sed -e 's/,.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
