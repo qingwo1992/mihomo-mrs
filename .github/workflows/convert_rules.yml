@@ -69,7 +69,7 @@ jobs:
           > "$PROVIDER_LINES_TMP"
           > "$RULESET_LINES_TMP"
 
-          # 新增：运行摘要计数器
+          # 运行摘要计数器
           declare -i total_processed=0
           declare -i total_succeeded=0
           declare -i total_failed=0
@@ -89,12 +89,14 @@ jobs:
               local provider_name="$base_name"
               local final_raw_file="$output_dir/${base_name}.txt"
               local url_path="main/latest/${base_name}"
+              local success=false
 
               if [[ "$type" == "classical" ]]; then
                   local output_file="$output_dir/${base_name}.list"
                   url_path+=".list"
                   cp "$input_file" "$output_file"
                   echo "  Archived unsupported rules to ${output_file}"
+                  success=true
               else
                   local output_file="$output_dir/${base_name}.mrs"
                   url_path+=".mrs"
@@ -118,25 +120,27 @@ jobs:
                   echo "  Converting: Type=${type}, Format=${format}"
                   if mihomo convert-ruleset "$type" "$format" "$input_for_mihomo" "$output_file"; then
                       echo "  Successfully ran mihomo conversion."
+                      success=true
                   else
                       echo "  Error: Mihomo command failed for ${input_file}."
-                      if [[ "$format" == "text" ]]; then rm -f "$temp_clean_input"; fi
-                      return 1
                   fi
                   if [[ "$format" == "text" ]]; then rm -f "$temp_clean_input"; fi
               fi
 
-              if [ -s "$output_file" ]; then
+              if [[ "$success" == true && -s "$output_file" ]]; then
                   total_succeeded+=1
                   cp "$input_file" "$final_raw_file"
                   local anchor_name="$type"
                   local full_url="https://raw.githubusercontent.com/${{ github.repository }}/${url_path}"
                   echo "  ${provider_name}: { <<: *${anchor_name}, url: '${full_url}' }" >> "$PROVIDER_LINES_TMP"
                   echo "- RULE-SET,${provider_name},${original_name_with_emoji}" >> "$RULESET_LINES_TMP"
-              else
-                  # 如果生成的 mrs 文件为空，也视为一种失败
-                  total_failed+=1
+              elif [[ "$success" == true ]]; then
+                  # 成功转换但文件为空
+                  total_failed+=1 # 算作一种失败
                   echo "  Warning: Generated file is empty, conversion likely failed silently. Skipping."
+              else
+                  # mihomo 命令直接失败
+                  total_failed+=1
               fi
           }
 
@@ -154,17 +158,14 @@ jobs:
               local other_file="${base_name}_other.list"
               > "$domain_file"; > "$ipcidr_file"; > "$other_file"
               
-              # 【已修复】使用更健壮的 awk 逻辑来正确分类带前缀和不带前缀的规则
               awk '
                   function strip(s) {
                       sub(/^[ \t\r\n]+/, "", s);
                       sub(/[ \t\r\n]+$/, "", s);
                       return s;
                   }
-                  # 规则1: 跳过注释和空行
                   !/^#/ && !/^[ \t\r\n]*$/ {
                       line = strip($0);
-                      # 规则2: 如果行中包含逗号, 按前缀分类
                       if (index(line, ",")) {
                           prefix = toupper(substr(line, 1, index(line, ",") - 1));
                           prefix = strip(prefix);
@@ -174,11 +175,9 @@ jobs:
                           } else if (prefix == "IP-CIDR") {
                               print line >> "'"$ipcidr_file"'";
                           } else {
-                              # 其他所有带前缀的规则都归为 other
                               print line >> "'"$other_file"'";
                           }
                       } else {
-                          # 规则3: 如果不带逗号, 默认视为 domain 规则 (最常见的情况)
                           print line >> "'"$domain_file"'";
                       }
                   }
@@ -208,7 +207,7 @@ jobs:
 
               if ! [[ "$url" =~ ^https?:// ]]; then
                   total_skipped+=1
-                  echo "  Warning: Invalid URL format, skipping."
+                  echo "  Warning: Invalid URL format (e.g., GEOIP, FINAL), skipping."
                   return
               fi
 
@@ -253,9 +252,14 @@ jobs:
               echo "'rule_sources.txt' not found or is empty, using default .ini file."
               INI_URL="https://raw.githubusercontent.com/cutethotw/ClashRule/main/GeneralClashRule.ini"
               INI_FILE="$DOWNLOADS_DIR/GeneralClashRule.ini"
-              curl -s -o "$INI_FILE" "$INI_URL"
+              if ! curl -L --fail -s -o "$INI_FILE" "$INI_URL"; then
+                  echo "FATAL: Could not download the main .ini file. Aborting."
+                  exit 1
+              fi
 
-              grep -E '^\s*ruleset=' "$INI_FILE" || true | while IFS= read -r line; do
+              # 【已修复】使用进程替换 <(...) 来避免子shell问题，确保计数器在主脚本中被修改
+              while IFS= read -r line; do
+                  echo "[DEBUG] Reading line from ini: $line"
                   line_content=$(echo "$line" | sed -e 's/^\s*ruleset=//' -e 's/clash-classic://')
                   url=$(echo "$line_content" | sed -e 's/.*,//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
                   original_name=$(echo "$line_content" | sed -e 's/,.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
@@ -266,7 +270,7 @@ jobs:
                   fi
                   
                   process_rule "$original_name" "$url"
-              done
+              done < <(grep -E '^\s*ruleset=' "$INI_FILE" || true)
           fi
           
           echo "--- Processing complete ---"
@@ -343,3 +347,4 @@ jobs:
             git commit -m "${{ env.COMMIT_MSG }}"
             git push --follow-tags
           fi
+
