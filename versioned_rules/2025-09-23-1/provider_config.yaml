@@ -1,0 +1,531 @@
+# Rule Providers for this version (versioned_rules/2025-09-23-1)
+# Generated at: 2025-09-23 02:52:32 UTC
+rule-providers:
+  # 原始名称: 👨‍💻 GitHub
+  GitHub_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/GitHub_domain.mrs"
+    path: "./rules/GitHub_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (Domain)
+  Inside_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Inside_domain.mrs"
+    path: "./rules/Inside_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (IP)
+  Inside_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Inside_ipcidr.mrs"
+    path: "./rules/Inside_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (Unsupported)
+  Inside_other:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Inside_other.list"
+    path: "./rules/Inside_other.list"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量
+  SteamCN_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/SteamCN_domain.mrs"
+    path: "./rules/SteamCN_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🚀 国外流量 (Domain)
+  Outside_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Outside_domain.mrs"
+    path: "./rules/Outside_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🚀 国外流量 (IP)
+  Outside_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Outside_ipcidr.mrs"
+    path: "./rules/Outside_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🚀 国外流量 (Unsupported)
+  Outside_other:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Outside_other.list"
+    path: "./rules/Outside_other.list"
+    interval: 86400
+
+  # 原始名称: 🧚 AI (Domain)
+  ChatGPT_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ChatGPT_domain.mrs"
+    path: "./rules/ChatGPT_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🧚 AI (Unsupported)
+  ChatGPT_other:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ChatGPT_other.list"
+    path: "./rules/ChatGPT_other.list"
+    interval: 86400
+
+  # 原始名称: 🧚 AI
+  OpenAI_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/OpenAI_domain.mrs"
+    path: "./rules/OpenAI_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🧚 AI
+  Claude_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Claude_domain.mrs"
+    path: "./rules/Claude_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🧚 AI
+  Gemini_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Gemini_domain.mrs"
+    path: "./rules/Gemini_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🧚 AI
+  Copilot_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Copilot_domain.mrs"
+    path: "./rules/Copilot_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🧚 AI (Domain)
+  Perplexity_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Perplexity_domain.mrs"
+    path: "./rules/Perplexity_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量
+  Lan_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Lan_domain.mrs"
+    path: "./rules/Lan_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (Domain)
+  UnBan_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/UnBan_domain.mrs"
+    path: "./rules/UnBan_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🚀 国外流量
+  PikPak_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/PikPak_domain.mrs"
+    path: "./rules/PikPak_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🛸 IP归属地伪装
+  rule-provider_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/rule-provider_domain.mrs"
+    path: "./rules/rule-provider_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截 (Domain)
+  BanAD_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BanAD_domain.mrs"
+    path: "./rules/BanAD_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截 (Domain)
+  BanProgramAD_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BanProgramAD_domain.mrs"
+    path: "./rules/BanProgramAD_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截 (IP)
+  BanProgramAD_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BanProgramAD_ipcidr.mrs"
+    path: "./rules/BanProgramAD_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截 (Domain)
+  BanEasyList_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BanEasyList_domain.mrs"
+    path: "./rules/BanEasyList_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截 (IP)
+  BanEasyList_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BanEasyList_ipcidr.mrs"
+    path: "./rules/BanEasyList_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截 (Domain)
+  BanEasyListChina_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BanEasyListChina_domain.mrs"
+    path: "./rules/BanEasyListChina_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截 (IP)
+  BanEasyListChina_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BanEasyListChina_ipcidr.mrs"
+    path: "./rules/BanEasyListChina_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截 (Domain)
+  BanEasyPrivacy_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BanEasyPrivacy_domain.mrs"
+    path: "./rules/BanEasyPrivacy_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截 (IP)
+  BanEasyPrivacy_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BanEasyPrivacy_ipcidr.mrs"
+    path: "./rules/BanEasyPrivacy_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🛑 广告拦截
+  ZhihuAds_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ZhihuAds_domain.mrs"
+    path: "./rules/ZhihuAds_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 📹 YouTube
+  YouTube_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/YouTube_domain.mrs"
+    path: "./rules/YouTube_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎥 Netflix
+  Netflix_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Netflix_domain.mrs"
+    path: "./rules/Netflix_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🐹 DisneyPlus
+  Disney_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Disney_domain.mrs"
+    path: "./rules/Disney_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 📽️ PrimeVideo
+  AmazonPrimeVideo_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/AmazonPrimeVideo_domain.mrs"
+    path: "./rules/AmazonPrimeVideo_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎦 HBO
+  HBO_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/HBO_domain.mrs"
+    path: "./rules/HBO_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎦 HBO
+  HBOAsia_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/HBOAsia_domain.mrs"
+    path: "./rules/HBOAsia_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎦 HBO
+  HBOUSA_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/HBOUSA_domain.mrs"
+    path: "./rules/HBOUSA_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🍎 AppleTV
+  AppleTV_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/AppleTV_domain.mrs"
+    path: "./rules/AppleTV_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎬 EMBY
+  Emby_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Emby_domain.mrs"
+    path: "./rules/Emby_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎬 EMBY
+  Emby_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Emby_domain.mrs"
+    path: "./rules/Emby_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 📺 巴哈姆特
+  Bahamut_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Bahamut_domain.mrs"
+    path: "./rules/Bahamut_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 📺 Bilibili (Domain)
+  BilibiliHMT_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BilibiliHMT_domain.mrs"
+    path: "./rules/BilibiliHMT_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 📺 Bilibili (IP)
+  BilibiliHMT_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/BilibiliHMT_ipcidr.mrs"
+    path: "./rules/BilibiliHMT_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 📺 Bilibili (Domain)
+  Bilibili_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Bilibili_domain.mrs"
+    path: "./rules/Bilibili_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 📺 Bilibili (Unsupported)
+  Bilibili_other:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Bilibili_other.list"
+    path: "./rules/Bilibili_other.list"
+    interval: 86400
+
+  # 原始名称: 🎵 Spotify
+  Spotify_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Spotify_domain.mrs"
+    path: "./rules/Spotify_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎶 TikTok
+  TikTok_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/TikTok_domain.mrs"
+    path: "./rules/TikTok_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🌍 国外媒体
+  GlobalMedia_Classical_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/GlobalMedia_Classical_domain.mrs"
+    path: "./rules/GlobalMedia_Classical_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🌏 国内媒体
+  ChinaMedia_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ChinaMedia_domain.mrs"
+    path: "./rules/ChinaMedia_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 📢 谷歌FCM (Domain)
+  GoogleFCM_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/GoogleFCM_domain.mrs"
+    path: "./rules/GoogleFCM_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 📢 谷歌FCM (IP)
+  GoogleFCM_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/GoogleFCM_ipcidr.mrs"
+    path: "./rules/GoogleFCM_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (Domain)
+  GoogleCN_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/GoogleCN_domain.mrs"
+    path: "./rules/GoogleCN_domain.mrs"
+    interval: 86400
+
+  # 原始名称: Ⓜ️ 微软云盘
+  OneDrive_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/OneDrive_domain.mrs"
+    path: "./rules/OneDrive_domain.mrs"
+    interval: 86400
+
+  # 原始名称: Ⓜ️ 微软服务
+  Microsoft_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Microsoft_domain.mrs"
+    path: "./rules/Microsoft_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🍎 苹果服务
+  Apple_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Apple_domain.mrs"
+    path: "./rules/Apple_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 📲 Telegram
+  Telegram_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Telegram_domain.mrs"
+    path: "./rules/Telegram_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🤖 Discord
+  Discord_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Discord_domain.mrs"
+    path: "./rules/Discord_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎮 游戏平台
+  Game_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Game_domain.mrs"
+    path: "./rules/Game_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🚀 国外流量 (Domain)
+  ProxyGFWlist_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ProxyGFWlist_domain.mrs"
+    path: "./rules/ProxyGFWlist_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🚀 国外流量 (IP)
+  ProxyGFWlist_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ProxyGFWlist_ipcidr.mrs"
+    path: "./rules/ProxyGFWlist_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🚀 国外流量 (Unsupported)
+  ProxyGFWlist_other:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ProxyGFWlist_other.list"
+    path: "./rules/ProxyGFWlist_other.list"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (Domain)
+  ChinaDomain_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ChinaDomain_domain.mrs"
+    path: "./rules/ChinaDomain_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (IP)
+  ChinaDomain_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ChinaDomain_ipcidr.mrs"
+    path: "./rules/ChinaDomain_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (Unsupported)
+  ChinaDomain_other:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ChinaDomain_other.list"
+    path: "./rules/ChinaDomain_other.list"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (IP)
+  ChinaCompanyIp_ipcidr:
+    type: http
+    behavior: ipcidr
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/ChinaCompanyIp_ipcidr.mrs"
+    path: "./rules/ChinaCompanyIp_ipcidr.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (Domain)
+  Download_domain:
+    type: http
+    behavior: domain
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Download_domain.mrs"
+    path: "./rules/Download_domain.mrs"
+    interval: 86400
+
+  # 原始名称: 🎯 国内流量 (Unsupported)
+  Download_other:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/qingwo1992/mihomo-mrs/main/versioned_rules/2025-09-23-1/rules/Download_other.list"
+    path: "./rules/Download_other.list"
+    interval: 86400
+
