@@ -104,14 +104,10 @@ jobs:
                   local temp_clean_input="cleaned_for_mrs.tmp"
 
                   if [[ "$format" == "text" ]]; then
-                      awk '
-                          /,/ {
-                              comma_pos = index($0, ",");
-                              print substr($0, comma_pos + 1);
-                              next;
-                          }
+                      # 【已修复】使用更健壮的 awk 命令，正确处理带后缀的 IP-CIDR 和各类 DOMAIN 规则
+                      awk -F, '
                           !/^#/ && !/^[ \t\r\n]*$/ {
-                              print $0;
+                              if (NF > 1) { print $2; } else { print $0; }
                           }
                       ' "$input_file" > "$temp_clean_input"
                       input_for_mihomo="$temp_clean_input"
@@ -183,14 +179,15 @@ jobs:
                   }
               ' "$input_file"
 
+              # 【已修复】移除附加的 (Domain), (IP), (Unsupported) 后缀
               if [ -s "$domain_file" ]; then
-                  convert_and_commit_rule "domain" "text" "$domain_file" "${base_name}_domain" "$output_dir" "${original_name_with_emoji} (Domain)"
+                  convert_and_commit_rule "domain" "text" "$domain_file" "${base_name}_domain" "$output_dir" "${original_name_with_emoji}"
               fi
               if [ -s "$ipcidr_file" ]; then
-                  convert_and_commit_rule "ipcidr" "text" "$ipcidr_file" "${base_name}_ipcidr" "$output_dir" "${original_name_with_emoji} (IP)"
+                  convert_and_commit_rule "ipcidr" "text" "$ipcidr_file" "${base_name}_ipcidr" "$output_dir" "${original_name_with_emoji}"
               fi
               if [ -s "$other_file" ]; then
-                  convert_and_commit_rule "classical" "text" "$other_file" "${base_name}_other" "$output_dir" "${original_name_with_emoji} (Unsupported)"
+                  convert_and_commit_rule "classical" "text" "$other_file" "${base_name}_other" "$output_dir" "${original_name_with_emoji}"
               fi
               
               rm -f "$domain_file" "$ipcidr_file" "$other_file"
@@ -240,21 +237,20 @@ jobs:
 
           # --- 主逻辑 ---
           
-          # 【已更新】如果 rule_sources.txt 存在，则处理它
+          # 如果 rule_sources.txt 存在，则处理它
           if [ -s "rule_sources.txt" ]; then
               echo "Custom 'rule_sources.txt' found, processing it."
               while IFS= read -r line; do
                   line=$(echo "$line" | tr -d '\r' | xargs)
                   if [ -z "$line" ]; then continue; fi
                   
-                  # 【已更新】智能解析：同时支持 ini 格式和纯 URL 格式
+                  # 智能解析：同时支持 ini 格式和纯 URL 格式
                   if [[ "$line" == *"ruleset="* ]]; then
                       line_content=$(echo "$line" | sed -e 's/^\s*ruleset=//' -e 's/clash-classic://')
                       url=$(echo "$line_content" | sed -e 's/.*,//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
                       original_name=$(echo "$line_content" | sed -e 's/,.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
                   else
                       url="$line"
-                      # 【已修复】移除了错误的 'local' 关键字
                       name=$(basename "$url" | sed 's/\.[^.]*$//')
                       original_name="$name"
                   fi
@@ -265,7 +261,7 @@ jobs:
               done < rule_sources.txt
           fi
           
-          # 【已更新】现在总是处理默认的 .ini 文件
+          # 现在总是处理默认的 .ini 文件
           echo "Processing default .ini file."
           INI_URL="https://raw.githubusercontent.com/cutethotw/ClashRule/main/GeneralClashRule.ini"
           INI_FILE="$DOWNLOADS_DIR/GeneralClashRule.ini"
@@ -361,4 +357,3 @@ jobs:
             git commit -m "${{ env.COMMIT_MSG }}"
             git push --follow-tags
           fi
-
