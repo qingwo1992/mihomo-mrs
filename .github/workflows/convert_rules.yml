@@ -69,16 +69,22 @@ jobs:
           > "$PROVIDER_LINES_TMP"
           > "$RULESET_LINES_TMP"
 
+          # 新增：运行摘要计数器
+          declare -i total_processed=0
+          declare -i total_succeeded=0
+          declare -i total_failed=0
+          declare -i total_skipped=0
+
           # --- 函数定义 ---
 
           # 函数：转换规则并记录结果
           convert_and_commit_rule() {
-              local type="$1"              # domain, ipcidr, classical
-              local format="$2"            # yaml, text
-              local input_file="$3"        # 带有原始格式的输入文件
-              local base_name="$4"         # 文件基础名 (e.g., Inside_domain)
-              local output_dir="$5"        # 输出目录 (e.g., versioned_rules/2025-09-23/rules)
-              local original_name_with_emoji="$6" # 源文件中的原始名称 (e.g., 🎯 国内流量)
+              local type="$1"
+              local format="$2"
+              local input_file="$3"
+              local base_name="$4"
+              local output_dir="$5"
+              local original_name_with_emoji="$6"
 
               local provider_name="$base_name"
               local final_raw_file="$output_dir/${base_name}.txt"
@@ -87,25 +93,21 @@ jobs:
               if [[ "$type" == "classical" ]]; then
                   local output_file="$output_dir/${base_name}.list"
                   url_path+=".list"
-                  cp "$input_file" "$output_file" #直接复制
+                  cp "$input_file" "$output_file"
                   echo "  Archived unsupported rules to ${output_file}"
               else
                   local output_file="$output_dir/${base_name}.mrs"
                   url_path+=".mrs"
-                  local input_for_mihomo="$input_file" # 默认直接使用输入文件
+                  local input_for_mihomo="$input_file"
                   local temp_clean_input="cleaned_for_mrs.tmp"
 
-                  # 仅当格式为 text (来自 .list/.txt) 时才进行预处理
                   if [[ "$format" == "text" ]]; then
-                      # 增强的预处理逻辑：可以同时处理 `TYPE,rule` 和纯 `rule` 两种格式
                       awk '
-                          # 如果行中包含逗号, 提取第一个逗号之后的所有内容
                           /,/ {
                               comma_pos = index($0, ",");
                               print substr($0, comma_pos + 1);
                               next;
                           }
-                          # 如果不包含逗号, 且不是注释或空行, 则打印整行
                           !/^#/ && !/^[ \t\r\n]*$/ {
                               print $0;
                           }
@@ -121,27 +123,20 @@ jobs:
                       if [[ "$format" == "text" ]]; then rm -f "$temp_clean_input"; fi
                       return 1
                   fi
-
-                  # 增加调试信息：检查生成的 mrs 文件是否为空
-                  if [ ! -s "$output_file" ]; then
-                      echo "  [Debug] WARNING: Generated MRS file IS EMPTY: $output_file. This can happen if source contains no valid rules."
-                  fi
-                  
-                  # 如果创建了临时文件，则清理
                   if [[ "$format" == "text" ]]; then rm -f "$temp_clean_input"; fi
               fi
 
               if [ -s "$output_file" ]; then
-                  # 归档带有原始格式的源文件
+                  total_succeeded+=1
                   cp "$input_file" "$final_raw_file"
-
-                  # 生成 provider 配置行
                   local anchor_name="$type"
                   local full_url="https://raw.githubusercontent.com/${{ github.repository }}/${url_path}"
                   echo "  ${provider_name}: { <<: *${anchor_name}, url: '${full_url}' }" >> "$PROVIDER_LINES_TMP"
-                  
-                  # 生成 rule-set 配置行
                   echo "- RULE-SET,${provider_name},${original_name_with_emoji}" >> "$RULESET_LINES_TMP"
+              else
+                  # 如果生成的 mrs 文件为空，也视为一种失败
+                  total_failed+=1
+                  echo "  Warning: Generated file is empty, conversion likely failed silently. Skipping."
               fi
           }
 
@@ -157,37 +152,38 @@ jobs:
               local domain_file="${base_name}_domain.txt"
               local ipcidr_file="${base_name}_ipcidr.txt"
               local other_file="${base_name}_other.list"
-              > "$domain_file"
-              > "$ipcidr_file"
-              > "$other_file"
+              > "$domain_file"; > "$ipcidr_file"; > "$other_file"
               
               # 【已修复】使用更健壮的 awk 逻辑来正确分类带前缀和不带前缀的规则
-              awk -F, '
+              awk '
                   function strip(s) {
                       sub(/^[ \t\r\n]+/, "", s);
                       sub(/[ \t\r\n]+$/, "", s);
                       return s;
                   }
+                  # 规则1: 跳过注释和空行
                   !/^#/ && !/^[ \t\r\n]*$/ {
                       line = strip($0);
-                      # 优先处理带前缀的显式规则
-                      if (/,/) {
-                          type = toupper(strip($1));
-                          if (type == "DOMAIN" || type == "DOMAIN-SUFFIX" || type == "DOMAIN-KEYWORD") {
-                              print line >> "'"$domain_file"'"; next;
+                      # 规则2: 如果行中包含逗号, 按前缀分类
+                      if (index(line, ",")) {
+                          prefix = toupper(substr(line, 1, index(line, ",") - 1));
+                          prefix = strip(prefix);
+
+                          if (prefix == "DOMAIN" || prefix == "DOMAIN-SUFFIX" || prefix == "DOMAIN-KEYWORD") {
+                              print line >> "'"$domain_file"'";
+                          } else if (prefix == "IP-CIDR") {
+                              print line >> "'"$ipcidr_file"'";
+                          } else {
+                              # 其他所有带前缀的规则都归为 other
+                              print line >> "'"$other_file"'";
                           }
-                          if (type == "IP-CIDR") {
-                              print line >> "'"$ipcidr_file"'"; next;
-                          }
-                          # 如果类型未知，则归为 other
-                          print line >> "'"$other_file"'"; next;
+                      } else {
+                          # 规则3: 如果不带逗号, 默认视为 domain 规则 (最常见的情况)
+                          print line >> "'"$domain_file"'";
                       }
-                      # 如果不带前缀，则默认视为 domain 规则
-                      print line >> "'"$domain_file"'";
                   }
               ' "$input_file"
 
-              # 转换拆分后的文件
               if [ -s "$domain_file" ]; then
                   convert_and_commit_rule "domain" "text" "$domain_file" "${base_name}_domain" "$output_dir" "${original_name_with_emoji} (Domain)"
               fi
@@ -205,12 +201,13 @@ jobs:
           process_rule() {
               local original_name="$1"
               local url="$2"
+              total_processed+=1
               
               echo "---"
               echo "Processing: Name='${original_name}', URL='${url}'"
 
-              # 检查 URL 是否有效
               if ! [[ "$url" =~ ^https?:// ]]; then
+                  total_skipped+=1
                   echo "  Warning: Invalid URL format, skipping."
                   return
               fi
@@ -221,33 +218,33 @@ jobs:
 
               echo "  Downloading to ${downloaded_file}..."
               if ! curl -L --retry 3 --fail -s -o "$downloaded_file" "$url"; then
+                  total_failed+=1
                   echo "  Warning: Download failed for ${url} after 3 retries, skipping."
                   return
               fi
 
               if [ ! -s "$downloaded_file" ]; then
+                  total_skipped+=1
                   echo "  Warning: Downloaded file is empty, skipping processing."
                   return
               fi
 
               if [[ "$extension" == "yaml" ]]; then
-                  # 对 .yaml 文件，直接进行 domain 转换
                   convert_and_commit_rule "domain" "yaml" "$downloaded_file" "$sanitized_filename_base" "$RULES_OUTPUT_DIR" "$original_name"
               elif [[ "$extension" == "txt" || "$extension" == "list" ]]; then
                   split_and_convert "$downloaded_file" "$sanitized_filename_base" "$RULES_OUTPUT_DIR" "$original_name"
               else
+                  total_skipped+=1
                   echo "  Warning: Unsupported file extension '.${extension}', skipping."
               fi
           }
 
           # --- 主逻辑 ---
-          # 脚本的核心逻辑：无论内容是否更新，每次都会完整执行下载、转换和输出的全部流程。
           if [ -s "rule_sources.txt" ]; then
               echo "Custom 'rule_sources.txt' found, processing it."
               while IFS= read -r url; do
-                  url=$(echo "$url" | xargs) # 清理空格和换行符
+                  url=$(echo "$url" | xargs)
                   if [ -n "$url" ]; then
-                      # 从 URL 中提取一个合适的名字
                       local name=$(basename "$url" | sed 's/\.[^.]*$//')
                       process_rule "$name" "$url"
                   fi
@@ -258,18 +255,11 @@ jobs:
               INI_FILE="$DOWNLOADS_DIR/GeneralClashRule.ini"
               curl -s -o "$INI_FILE" "$INI_URL"
 
-              # 解析 .ini 文件, `|| true` 防止在没有匹配项时脚本因 grep 的退出码 1 而失败
               grep -E '^\s*ruleset=' "$INI_FILE" || true | while IFS= read -r line; do
-                  # 移除行首的 'ruleset=' 和可能的 'clash-classic:'
                   line_content=$(echo "$line" | sed -e 's/^\s*ruleset=//' -e 's/clash-classic://')
-                  
-                  # 更健壮的提取逻辑
-                  # URL 是最后一个逗号之后的所有内容
                   url=$(echo "$line_content" | sed -e 's/.*,//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
-                  # 名称是第一个逗号之前的所有内容
                   original_name=$(echo "$line_content" | sed -e 's/,.*//' -e 's/^[ \t]*//' -e 's/[ \t]*$//')
 
-                  # 增加一个检查，防止从格式错误的行中提取出空URL
                   if [ -z "$url" ]; then
                       echo "  Warning: Could not extract a valid URL from line: '$line'. Skipping."
                       continue
@@ -308,22 +298,17 @@ jobs:
 
           # --- 生成汇总的 MD 文件 ---
           MRS_RULES_MD="mrs_rules.md"
-          echo "# MRS Ruleset Links (Always Latest)" > "$MRS_RULES_MD"
-          echo "" >> "$MRS_RULES_MD"
-          echo "Generated at: $(date -u --rfc-3339=seconds)" >> "$MRS_RULES_MD"
-          echo "" >> "$MRS_RULES_MD"
+          echo "# MRS Ruleset Links (Always Latest)" > "$MRS_RULES_MD"; echo "" >> "$MRS_RULES_MD"
+          echo "Generated at: $(date -u --rfc-3339=seconds)" >> "$MRS_RULES_MD"; echo "" >> "$MRS_RULES_MD"
           echo '```yaml' >> "$MRS_RULES_MD"
-          # 在 grep 后添加 || true，以防止在没有匹配项时因 set -e 而导致脚本失败
           grep -E -- '- RULE-SET' "$PROVIDER_CONFIG_PATH" >> "$MRS_RULES_MD" || true
           echo '```' >> "$MRS_RULES_MD"
 
           # --- 创建 latest 目录并复制最新文件 ---
           LATEST_DIR="latest"
-          rm -rf "$LATEST_DIR"
-          mkdir -p "$LATEST_DIR"
+          rm -rf "$LATEST_DIR"; mkdir -p "$LATEST_DIR"
           echo "Copying latest rules to /$LATEST_DIR directory..."
-          # 检查 RULES_OUTPUT_DIR 中是否有文件，防止因 glob 匹配不到文件而报错
-          if [ -n "$(ls -A $RULES_OUTPUT_DIR)" ]; then
+          if [ -n "$(ls -A $RULES_OUTPUT_DIR 2>/dev/null)" ]; then
               cp -r "$RULES_OUTPUT_DIR"/* "$LATEST_DIR/"
           else
               echo "No new rule files were generated, skipping copy to latest."
@@ -336,22 +321,25 @@ jobs:
 
           # 设置 git commit 的 message
           echo "COMMIT_MSG=feat(rules): Auto update MRS rulesets to version $VERSION_TAG" >> $GITHUB_ENV
-          # 创建新的 tag
           git tag "$VERSION_TAG"
+
+          # --- 打印运行摘要 ---
+          echo "--- Run Summary ---"
+          echo "Rules Processed: $total_processed"
+          echo "Rules Succeeded: $total_succeeded"
+          echo "Rules Skipped (Invalid/Empty): $total_skipped"
+          echo "Rules Failed (Download/Convert): $total_failed"
 
       - name: Commit and Push to repository
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 添加所有新生成的文件
           git add latest/ versioned_rules/ mrs_rules.md provider_config.yaml
           
-          # 检查是否有文件变动
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            # 使用上一步的输出作为 commit message 的一部分
             git commit -m "${{ env.COMMIT_MSG }}"
             git push --follow-tags
           fi
