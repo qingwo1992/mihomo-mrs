@@ -1,1 +1,1 @@
-ruleset=🌍 国外媒体,https://raw.githubusercontent.com/LM-Firefly/Rules/master/Clash-RuleSet-Classical/PROXY/Pinterest.yaml
+ruleset=🚀 国外流量,https://raw.githubusercontent.com/LM-Firefly/Rules/master/Clash-RuleSet-Classical/PROXY/Pinterest.yaml
