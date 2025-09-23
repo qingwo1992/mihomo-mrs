@@ -52,7 +52,7 @@ jobs:
           echo "Mihomo version:"
           mihomo -v
 
-      # 4. 运行转换脚本 (最终修复版)
+      # 4. 运行转换脚本 (性能优化版)
       - name: Run Conversion Script
         id: conversion
         run: |
@@ -165,44 +165,61 @@ jobs:
                   return
               fi
 
-              # --- 核心修改：文件预处理和拆分 ---
               if [[ "$extension" == "txt" || "$extension" == "list" ]]; then
-                  echo "  File is a .txt/.list, attempting to split into domain/ipcidr/other..."
+                  echo "  File is a .txt/.list, using awk to split into domain/ipcidr/other for performance..."
                   local domain_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.domains.txt"
                   local ipcidr_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.ips.txt"
                   local other_temp_file="${DOWNLOAD_DIR}/${sanitized_name}.other.list"
 
-                  # 拆分逻辑
-                  while IFS= read -r original_line || [[ -n "$original_line" ]]; do
-                      line=$(echo "$original_line" | sed 's/#.*//' | xargs) # 移除注释和多余空格用于匹配
-                      if [ -z "$line" ]; then continue; fi
+                  # --- 性能优化：使用 awk 代替 shell 循环 ---
+                  awk -v domain_f="$domain_temp_file" -v ip_f="$ipcidr_temp_file" -v other_f="$other_temp_file" '
+                  {
+                      # 保存原始行，用于 "other" 类别
+                      original_line = $0
                       
-                      if [[ "$line" == DOMAIN,* || "$line" == DOMAIN-SUFFIX,* || "$line" == DOMAIN-KEYWORD,* ]]; then
-                          echo "$line" | cut -d',' -f2- >> "$domain_temp_file"
-                      elif [[ "$line" == IP-CIDR,* ]]; then
-                          echo "$line" | cut -d',' -f2 >> "$ipcidr_temp_file"
-                      else
-                          # 这是一个不支持 MRS 转换的规则，保存原始行
-                          echo "$original_line" >> "$other_temp_file"
-                      fi
-                  done < "$temp_input_file"
-
-                  # 如果拆分出了域名文件，则处理它
+                      # 移除注释和首尾空格
+                      sub(/#.*/, "")
+                      gsub(/^[ \t]+|[ \t]+$/, "")
+                      
+                      # 如果处理后为空行，则跳过
+                      if ($0 == "") {
+                          next
+                      }
+                      
+                      # 匹配 domain 类型
+                      if ($0 ~ /^(DOMAIN|DOMAIN-SUFFIX|DOMAIN-KEYWORD),/) {
+                          sub(/^(DOMAIN|DOMAIN-SUFFIX|DOMAIN-KEYWORD),/, "")
+                          print $0 >> domain_f
+                          next
+                      }
+                      
+                      # 匹配 ip-cidr 类型
+                      if ($0 ~ /^IP-CIDR,/) {
+                          sub(/^IP-CIDR,/, "")
+                          # 处理 no-resolve 等情况
+                          split($0, parts, ",")
+                          print parts[1] >> ip_f
+                          next
+                      }
+                      
+                      # 其他所有不匹配的规则，写入 other 文件
+                      print original_line >> other_f
+                  }
+                  ' "$temp_input_file"
+                  
+                  # 后续逻辑不变，检查拆分出的文件并处理
                   if [ -s "$domain_temp_file" ]; then
                       convert_and_commit_rule "${name} (Domain)" "$domain_temp_file" "domain" "$sanitized_name"
                   fi
-                  # 如果拆分出了IP文件，则处理它
                   if [ -s "$ipcidr_temp_file" ]; then
                       convert_and_commit_rule "${name} (IP)" "$ipcidr_temp_file" "ipcidr" "$sanitized_name"
                   fi
-                  # 如果拆分出了其他类型的文件，则处理它
                   if [ -s "$other_temp_file" ]; then
                       local final_other_filename="${sanitized_name}_other.list"
                       local final_other_filepath="${RULES_SUBDIR}/${final_other_filename}"
                       echo "  -> Archiving unsupported rules to ${final_other_filepath}"
                       mv "$other_temp_file" "$final_other_filepath"
 
-                      # 在 provider_config.yaml 中为其创建条目
                       echo "  # 原始名称: ${name} (Unsupported)" >> "$CONFIG_FILE"
                       echo "  ${sanitized_name}_other:" >> "$CONFIG_FILE"
                       echo "    type: http" >> "$CONFIG_FILE"
@@ -212,14 +229,12 @@ jobs:
                       echo "    interval: 86400" >> "$CONFIG_FILE"
                       echo "" >> "$CONFIG_FILE"
 
-                      # 在 mrs_rules.md 中也添加引用
                       echo "- RULE-SET,${name} (Unsupported),${GITHUB_RAW_URL_BASE}/${final_other_filepath}" >> "$SUMMARY_FILE"
                   fi
 
                   rm "$temp_input_file"
 
               elif [[ "$extension" == "yaml" || "$extension" == "yml" ]]; then
-                  # YAML 文件默认为纯 domain 类型，直接转换
                   echo "  File is a .yaml, converting as pure domain..."
                   mv "$temp_input_file" "${DOWNLOAD_DIR}/${sanitized_name}.domains.txt"
                   convert_and_commit_rule "$name" "${DOWNLOAD_DIR}/${sanitized_name}.domains.txt" "domain" "$sanitized_name"
