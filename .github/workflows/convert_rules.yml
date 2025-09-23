@@ -224,8 +224,8 @@ jobs:
               INI_FILE="$DOWNLOADS_DIR/GeneralClashRule.ini"
               curl -s -o "$INI_FILE" "$INI_URL"
 
-              # 解析 .ini 文件
-              grep -E '^\s*ruleset=' "$INI_FILE" | while IFS= read -r line; do
+              # 解析 .ini 文件, `|| true` 防止在没有匹配项时脚本因 grep 的退出码 1 而失败
+              grep -E '^\s*ruleset=' "$INI_FILE" || true | while IFS= read -r line; do
                   # 移除行首的 'ruleset=' 和可能的 'clash-classic:'
                   line_content=$(echo "$line" | sed -e 's/^\s*ruleset=//' -e 's/clash-classic://')
                   
@@ -287,7 +287,12 @@ jobs:
           rm -rf "$LATEST_DIR"
           mkdir -p "$LATEST_DIR"
           echo "Copying latest rules to /$LATEST_DIR directory..."
-          cp -r "$RULES_OUTPUT_DIR"/* "$LATEST_DIR/"
+          # 检查 RULES_OUTPUT_DIR 中是否有文件，防止因 glob 匹配不到文件而报错
+          if [ -n "$(ls -A $RULES_OUTPUT_DIR)" ]; then
+              cp -r "$RULES_OUTPUT_DIR"/* "$LATEST_DIR/"
+          else
+              echo "No new rule files were generated, skipping copy to latest."
+          fi
           cp "$PROVIDER_CONFIG_PATH" "$LATEST_DIR/provider_config.yaml"
 
           # --- 将最新的 provider_config.yaml 复制到根目录 ---
