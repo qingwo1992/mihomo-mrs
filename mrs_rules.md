@@ -1,6 +1,6 @@
 # MRS Ruleset Links (Always Latest)
 
-Generated at: 2025-10-26 02:06:04+00:00
+Generated at: 2025-11-02 02:08:47+00:00
 
 ```yaml
 - RULE-SET,Pinterest_domain,🚀 国外流量
@@ -22,6 +22,8 @@ Generated at: 2025-10-26 02:06:04+00:00
 - RULE-SET,Copilot_ipcidr,🧚 AI
 - RULE-SET,Copilot_other,🧚 AI
 - RULE-SET,Perplexity_domain,🧚 AI
+- RULE-SET,Grok_domain,🧚 AI
+- RULE-SET,Grok_other,🧚 AI
 - RULE-SET,Lan_domain,🎯 国内流量
 - RULE-SET,Lan_ipcidr,🎯 国内流量
 - RULE-SET,UnBan_domain,🎯 国内流量
