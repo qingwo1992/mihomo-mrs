@@ -1,6 +1,6 @@
 # MRS Ruleset Links (Always Latest)
 
-Generated at: 2026-01-18 02:30:59+00:00
+Generated at: 2026-01-25 02:34:54+00:00
 
 ```yaml
 - RULE-SET,Pinterest_domain,🚀 国外流量
@@ -56,7 +56,6 @@ Generated at: 2026-01-18 02:30:59+00:00
 - RULE-SET,BilibiliHMT_domain,📺 Bilibili
 - RULE-SET,BilibiliHMT_ipcidr,📺 Bilibili
 - RULE-SET,Bilibili_domain,📺 Bilibili
-- RULE-SET,Bilibili_other,📺 Bilibili
 - RULE-SET,Spotify_domain,🎵 Spotify
 - RULE-SET,Spotify_ipcidr,🎵 Spotify
 - RULE-SET,Spotify_other,🎵 Spotify
