@@ -1,6 +1,6 @@
 # MRS Ruleset Links (Always Latest)
 
-Generated at: 2026-03-15 03:22:41+00:00
+Generated at: 2026-03-22 02:56:26+00:00
 
 ```yaml
 - RULE-SET,Pinterest_domain,🚀 国外流量
