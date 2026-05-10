@@ -1,30 +1,19 @@
 # MRS Ruleset Links (Always Latest)
 
-Generated at: 2026-05-03 04:00:33+00:00
+Generated at: 2026-05-10 04:02:01+00:00
 
 ```yaml
 - RULE-SET,Pinterest_domain,🚀 国外流量
+- RULE-SET,Outside_domain,🚀 国外流量
+- RULE-SET,Outside_ipcidr,🚀 国外流量
 - RULE-SET,GitHub_domain,👨‍💻 GitHub
 - RULE-SET,Inside_domain,🎯 国内流量
 - RULE-SET,Inside_ipcidr,🎯 国内流量
 - RULE-SET,Inside_other,🎯 国内流量
 - RULE-SET,SteamCN_domain,🎯 国内流量
-- RULE-SET,Outside_domain,🚀 国外流量
-- RULE-SET,Outside_ipcidr,🚀 国外流量
-- RULE-SET,ChatGPT_domain,🧚 AI
-- RULE-SET,ChatGPT_other,🧚 AI
-- RULE-SET,OpenAI_domain,🧚 AI
-- RULE-SET,OpenAI_ipcidr,🧚 AI
-- RULE-SET,OpenAI_other,🧚 AI
-- RULE-SET,Claude_domain,🧚 AI
-- RULE-SET,Gemini_domain,🧚 AI
-- RULE-SET,Google_domain,🧚 AI
-- RULE-SET,Copilot_domain,🧚 AI
-- RULE-SET,Copilot_ipcidr,🧚 AI
-- RULE-SET,Copilot_other,🧚 AI
-- RULE-SET,Perplexity_domain,🧚 AI
-- RULE-SET,Grok_domain,🧚 AI
-- RULE-SET,Grok_other,🧚 AI
+- RULE-SET,AI_domain,🧚 AI
+- RULE-SET,AI_ipcidr,🧚 AI
+- RULE-SET,AI_other,🧚 AI
 - RULE-SET,Lan_domain,🎯 国内流量
 - RULE-SET,Lan_ipcidr,🎯 国内流量
 - RULE-SET,UnBan_domain,🎯 国内流量
