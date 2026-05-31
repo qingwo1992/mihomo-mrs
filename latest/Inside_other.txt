@@ -1,1 +1,9 @@
 PROCESS-NAME,SunloginClient.exe
+PROCESS-NAME,ToDesk.exe
+PROCESS-NAME,ToDesk_Service.exe
+PROCESS-NAME,ToDesk_Session.exe
+PROCESS-NAME,ToDesk_Lite.exe
+PROCESS-NAME,ToDesk_RemoteAssistance.exe
+PROCESS-NAME,ToDesk_Setup.exe
+PROCESS-NAME,ToDesk
+PROCESS-NAME,todesk
