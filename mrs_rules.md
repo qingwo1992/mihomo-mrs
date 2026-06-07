@@ -1,19 +1,23 @@
 # MRS Ruleset Links (Always Latest)
 
-Generated at: 2026-05-31 04:42:36+00:00
+Generated at: 2026-06-07 04:47:52+00:00
 
 ```yaml
 - RULE-SET,Pinterest_domain,🚀 国外流量
 - RULE-SET,Outside_domain,🚀 国外流量
 - RULE-SET,Outside_ipcidr,🚀 国外流量
 - RULE-SET,GitHub_domain,👨‍💻 GitHub
+- RULE-SET,Claude_domain,🧚 AI
+- RULE-SET,Claude_ipcidr,🧚 AI
+- RULE-SET,Claude_other,🧚 AI
+- RULE-SET,anthropic-clash_domain,🧚 AI
+- RULE-SET,AI_domain,🧚 AI
+- RULE-SET,AI_ipcidr,🧚 AI
+- RULE-SET,AI_other,🧚 AI
 - RULE-SET,Inside_domain,🎯 国内流量
 - RULE-SET,Inside_ipcidr,🎯 国内流量
 - RULE-SET,Inside_other,🎯 国内流量
 - RULE-SET,SteamCN_domain,🎯 国内流量
-- RULE-SET,AI_domain,🧚 AI
-- RULE-SET,AI_ipcidr,🧚 AI
-- RULE-SET,AI_other,🧚 AI
 - RULE-SET,Lan_domain,🎯 国内流量
 - RULE-SET,Lan_ipcidr,🎯 国内流量
 - RULE-SET,UnBan_domain,🎯 国内流量
