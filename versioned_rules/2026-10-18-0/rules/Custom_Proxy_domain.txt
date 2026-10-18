@@ -1,0 +1,15 @@
+DOMAIN,gw.sky-ip.net
+DOMAIN-SUFFIX,gw.sky-ip.net
+DOMAIN-SUFFIX,emby.vault647.com
+DOMAIN-SUFFIX,gstatic.com
+DOMAIN-SUFFIX,googleapis.cn
+DOMAIN-SUFFIX,xn--ngstr-lra8j.com
+DOMAIN-SUFFIX,binance.com
+DOMAIN-SUFFIX,bnbstatic.com
+DOMAIN-SUFFIX,livednow.com
+DOMAIN-SUFFIX,423down.com
+DOMAIN-SUFFIX,javdb.com
+DOMAIN-SUFFIX,nodeseek.com
+bangumi.moe
+DOMAIN-SUFFIX,apple-relay.cloudflare.com
+DOMAIN-SUFFIX,apple-relay.apple.com
