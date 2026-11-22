@@ -1,9 +1,10 @@
 # MRS Ruleset Links (Always Latest)
 
-Generated at: 2026-11-15 06:03:17+00:00
+Generated at: 2026-11-22 06:23:13+00:00
 
 ```yaml
 - RULE-SET,Pinterest_domain,🚀 国外流量
+- RULE-SET,Security_domain,🛑 隐私拦截
 - RULE-SET,Custom_Proxy_domain,🚀 国外流量
 - RULE-SET,Custom_Proxy_ipcidr,🚀 国外流量
 - RULE-SET,GitHub_domain,👨‍💻 GitHub
@@ -63,9 +64,9 @@ Generated at: 2026-11-15 06:03:17+00:00
 - RULE-SET,OneDrive_other,Ⓜ️ 微软云盘
 - RULE-SET,Microsoft_domain,Ⓜ️ 微软服务
 - RULE-SET,Microsoft_other,Ⓜ️ 微软服务
-- RULE-SET,Apple_domain,🍎 苹果服务
-- RULE-SET,Apple_ipcidr,🍎 苹果服务
-- RULE-SET,Apple_other,🍎 苹果服务
+- RULE-SET,Apple_Classical_domain,🍎 苹果服务
+- RULE-SET,Apple_Classical_ipcidr,🍎 苹果服务
+- RULE-SET,Apple_Classical_other,🍎 苹果服务
 - RULE-SET,Telegram_domain,📲 Telegram
 - RULE-SET,Telegram_ipcidr,📲 Telegram
 - RULE-SET,Telegram_other,📲 Telegram
